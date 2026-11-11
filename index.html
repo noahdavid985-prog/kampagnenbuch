@@ -1,0 +1,374 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0B161C">
+<meta name="description" content="Das Kampagnenbuch eurer Hollowmere-Runde: Charakterbögen, Gruppe, Karte, Chronik und Notizen.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Kampagnenbuch">
+<title>Hollowmere Kampagnenbuch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,500&family=Marcellus&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Look: Laternennacht. One deliberate night theme: deep blue-black ground, slim Marcellus headings over light Outfit text,
+   and five lantern colours with fixed jobs: amber = light, actions, proficiency; mint = hit points and healing;
+   coral = combat and damage; violet = magic and locked things; sky = a calm extra tone.
+   Layout: a sticky masthead (brand left, tabs right; a bottom bar on phones) over one working column up to 1120px. */
+:root{
+  --paper:#0E1B22; --paper-0:#0B161C; --paper-2:#142630; --paper-3:#0B161C; --raise:#1A303B; --note:#2A2618;
+  --ink:#ECE8DC; --ink-soft:#9FB3B6; --rule:#2A4553; --shade:rgba(236,232,220,.06); --dim:#33415A;
+  --amber:#F5B955; --flame:#F5B955; --coral:#FF8C7A; --danger:#FF8C7A; --mint:#6FE0C5; --moss:#6FE0C5; --violet:#B7A3FF; --plum:#B7A3FF; --sky:#7CC4FF;
+  --t-amber:#2A2618; --t-coral:#2E2022; --t-mint:#11302F; --t-violet:#1E2145; --t-sky:#1B3146;
+  --l-amber:#5E4E22; --l-mint:#23625A; --l-violet:#3D4486;
+  --on-flame:#1A1408; --on-coral:#2A0F0A; --on-mint:#06241E; --focus:#F5B955;
+  --display:"Marcellus","Cormorant Garamond",Georgia,serif;
+  --text:"Outfit",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --script:"Cormorant Garamond",Georgia,serif;
+  --r:16px;
+  color-scheme:dark;
+}
+[hidden]{display:none!important}
+img{max-width:100%}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{-webkit-text-size-adjust:100%;scroll-padding-top:calc(env(safe-area-inset-top,0px) + 120px)}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--text);font-weight:400;font-size:1rem;line-height:1.5;font-variant-numeric:lining-nums}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:45;background:var(--paper-0)}
+button,input,textarea,select{font:inherit;color:inherit}
+button{-webkit-tap-highlight-color:transparent;cursor:pointer}
+button:disabled{cursor:default}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+p{margin:0 0 .7rem}
+i{font-style:normal}
+b{font-weight:500}
+h1,h2,h3{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance}
+.wrap{max-width:1120px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.h1{font-size:clamp(1.9rem,5vw,2.75rem);line-height:1.06;letter-spacing:.01em}
+.h2{font-size:1.4rem;line-height:1.2;margin:1.6rem 0 .5rem;letter-spacing:.02em}
+.h3{font-size:1.2rem;line-height:1.2;letter-spacing:.02em}
+.lead{color:var(--ink-soft);font-size:1.05rem;max-width:62ch;margin:.4rem 0 1.2rem}
+.soft{color:var(--ink-soft)}
+.sm{font-size:.9rem}
+.lbl{font-size:.7rem;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft);margin:0 0 .3rem;display:block}
+.pre{white-space:pre-wrap;overflow-wrap:anywhere}
+.empty{color:var(--ink-soft);padding:1rem 0;max-width:60ch}
+.rowf{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center}
+.grow{flex:1 1 auto;min-width:0}
+.right{margin-left:auto}
+.stack{display:flex;flex-direction:column;gap:.9rem}
+
+/* masthead */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:40;background:var(--paper-0);border-bottom:1px solid var(--rule)}
+.top>.wrap{display:flex;flex-wrap:wrap;align-items:center;gap:0 1.5rem}
+.top-row{display:flex;align-items:center;gap:.9rem;min-height:60px;flex:1 1 auto;min-width:0}
+.brand{display:flex;align-items:center;gap:.7rem;font-family:var(--display);font-size:1.4rem;line-height:1.05;letter-spacing:.02em;min-width:0}
+.brand svg{width:22px;height:29px;flex:none}
+.brand small{display:block;font-family:var(--text);font-size:.66rem;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-soft);margin-top:.2rem}
+.brand span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.savest{font-size:.8rem;color:var(--ink-soft);white-space:nowrap}
+.acct{flex:none;width:38px;height:38px;border-radius:50%;border:1px solid var(--rule);background:var(--raise);padding:0;overflow:hidden}
+.acct:hover{border-color:var(--amber)}
+.acct img{width:100%;height:100%;object-fit:cover;display:block}
+.login{max-width:27rem;margin:3rem auto 2rem;display:flex;flex-direction:column;gap:1rem}
+.login .brand{font-size:2rem;gap:.8rem}
+.login .brand svg{width:30px;height:39px}
+.login .box{display:flex;flex-direction:column;gap:.75rem}
+.or{display:flex;align-items:center;gap:.8rem;color:var(--ink-soft);font-size:.85rem}
+.or::before,.or::after{content:"";flex:1;height:1px;background:var(--rule)}
+.gbtn{justify-content:center;min-height:2.9rem;font-size:1rem}
+.linkbtn{border:0;background:none;color:var(--amber);padding:0;font-size:.9rem;text-decoration:underline;text-underline-offset:3px}
+.err{color:var(--coral);font-size:.92rem}
+.ok{color:var(--mint);font-size:.92rem}
+.copyrow{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin-top:.45rem}
+.copyrow code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.85rem;background:var(--paper-0);border:1px solid var(--rule);border-radius:10px;padding:.35rem .6rem;overflow-wrap:anywhere;user-select:all}
+.tabs{display:flex;gap:.3rem;padding:.5rem 0;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{position:relative;background:none;border:0;padding:.55rem 1.1rem;border-radius:999px;font-size:.97rem;letter-spacing:.02em;display:flex;align-items:center;gap:.45rem;white-space:nowrap;color:var(--ink)}
+.tabs button:hover{color:var(--amber)}
+.tabs button[aria-current="page"]{background:var(--amber);color:var(--on-flame);font-weight:500}
+.tabs svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.badge{min-width:1.25rem;height:1.25rem;padding:0 .35rem;border-radius:999px;background:var(--coral);color:var(--on-coral);font-size:.74rem;font-weight:600;display:inline-grid;place-items:center;line-height:1}
+main{padding-block:1.5rem 4rem}
+@media (max-width:760px){
+  .tabs{position:fixed;left:0;right:0;bottom:0;z-index:50;background:var(--paper-0);border-top:1px solid var(--rule);justify-content:space-around;padding:.35rem max(.25rem,env(safe-area-inset-right,0px)) calc(.4rem + env(safe-area-inset-bottom,0px)) max(.25rem,env(safe-area-inset-left,0px));margin:0;max-width:none}
+  .tabs button{flex-direction:column;gap:.1rem;font-size:.7rem;padding:.4rem .45rem;border-radius:14px;min-width:3.2rem}
+  .tabs svg{width:22px;height:22px}
+  .tabs .badge{position:absolute;top:.05rem;right:.15rem}
+  main{padding-block:1.1rem 7rem}
+}
+
+/* controls */
+.btn{border:1px solid var(--rule);background:transparent;border-radius:999px;padding:.4rem 1.05rem;font-size:.95rem;white-space:nowrap;display:inline-flex;align-items:center;gap:.45rem;min-height:2.5rem;color:var(--ink)}
+.btn:hover:not(:disabled){border-color:var(--amber);color:var(--amber)}
+.btn.prime{border-color:var(--amber);color:var(--amber)}
+.btn.solid,.btn.flame{background:var(--amber);border-color:var(--amber);color:var(--on-flame);font-weight:500}
+.btn.solid:hover:not(:disabled),.btn.flame:hover:not(:disabled){background:#FFD08A;border-color:#FFD08A;color:var(--on-flame)}
+.btn.quiet{color:var(--ink-soft)}
+.btn.warn,.btn.dmg{border-color:var(--coral);color:var(--coral)}
+.btn.warn:hover:not(:disabled),.btn.dmg:hover:not(:disabled){background:var(--coral);border-color:var(--coral);color:var(--on-coral)}
+.btn.heal{border-color:var(--mint);color:var(--mint)}
+.btn.heal:hover:not(:disabled){background:var(--mint);border-color:var(--mint);color:var(--on-mint)}
+.btn:disabled{opacity:.45}
+.btn.s{padding:.15rem .8rem;font-size:.86rem;min-height:2rem}
+.btn svg,.ic{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.xbtn{border:0;background:none;color:var(--ink-soft);padding:.2rem .45rem;border-radius:8px;font-size:1.2rem;line-height:1}
+.xbtn:hover{color:var(--coral);background:var(--shade)}
+.in{width:100%;padding:.45rem .8rem;border:1px solid var(--rule);border-radius:12px;background:var(--paper-3);min-height:2.5rem;color:var(--ink)}
+.in:focus{outline:none;border-color:var(--amber);box-shadow:0 0 0 3px rgba(245,185,85,.2)}
+.in::placeholder{color:var(--ink-soft);opacity:.7}
+textarea.in{min-height:6rem;line-height:1.45;resize:vertical;display:block}
+.in.num{width:4.6rem;text-align:center}
+.in.tiny{width:3.5rem;text-align:center;padding:.25rem .2rem}
+.fl{display:flex;flex-direction:column;gap:.2rem;min-width:0}
+.fl>span{font-size:.8rem;color:var(--ink-soft)}
+.fg{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,170px),1fr));gap:.7rem .8rem}
+.fg .wide{grid-column:1/-1}
+.chk{display:inline-flex;align-items:center;gap:.5rem;cursor:pointer}
+.chk input{width:1.1rem;height:1.1rem;accent-color:var(--amber)}
+.seg{display:inline-flex;border:1px solid var(--rule);border-radius:999px;overflow:hidden;flex-wrap:wrap;background:var(--paper-0)}
+.seg button{border:0;background:none;padding:.42rem .95rem;font-size:.92rem;color:var(--ink)}
+.seg button[aria-pressed="true"]{background:var(--amber);color:var(--on-flame);font-weight:500}
+.chips{display:flex;gap:.4rem;flex-wrap:wrap}
+.chip{border:1px solid var(--rule);border-radius:999px;background:transparent;padding:.28rem .9rem;font-size:.92rem;color:var(--ink)}
+.chip:hover:not(:disabled){border-color:var(--amber)}
+.chip[aria-pressed="true"]{background:var(--amber);border-color:var(--amber);color:var(--on-flame);font-weight:500}
+.tag{display:inline-block;font-family:var(--text);font-size:.76rem;font-weight:400;border:1px solid var(--rule);border-radius:999px;padding:.05rem .6rem;color:var(--ink-soft);white-space:nowrap;line-height:1.5;letter-spacing:.03em;text-transform:none;vertical-align:middle}
+.tag.new{background:var(--coral);border-color:var(--coral);color:var(--on-coral);font-weight:500}
+.tag.you{background:var(--amber);border-color:var(--amber);color:var(--on-flame);font-weight:500}
+.tag.ok,.tag.mint{border-color:var(--mint);color:var(--mint)}
+.tag.bad{border-color:var(--coral);color:var(--coral)}
+.tag.amber{border-color:var(--amber);color:var(--amber)}
+.tag.violet{border-color:var(--violet);color:var(--violet)}
+.tag.sky{border-color:var(--sky);color:var(--sky)}
+.tag.big{font-size:.84rem;padding:.15rem .8rem}
+.box{border:1px solid var(--rule);border-radius:20px;padding:1.15rem 1.25rem;background:var(--paper-2)}
+.box.hp{background:var(--t-mint);border-color:var(--l-mint)}
+.box.hp .lbl{color:var(--mint)}
+.box.hp .in{border-color:var(--l-mint);border-radius:999px}
+.hint{background:var(--paper-2);border:1px solid var(--rule);border-radius:var(--r);padding:.75rem 1rem;font-size:.95rem;max-width:74ch}
+.subtabs{display:flex;gap:1.4rem;border-bottom:1px solid var(--rule);margin:1.4rem 0 1rem;overflow-x:auto;white-space:nowrap;scrollbar-width:none}
+.subtabs::-webkit-scrollbar{display:none}
+.subtabs button{background:none;border:0;border-bottom:2px solid transparent;padding:.5rem 0;font-family:var(--display);font-size:1.1rem;letter-spacing:.02em;color:var(--ink-soft);display:flex;gap:.4rem;align-items:center}
+.subtabs button:hover{color:var(--ink)}
+.subtabs button[aria-current="true"]{border-bottom-color:var(--amber);color:var(--ink)}
+
+/* strips under the masthead */
+.banner{background:var(--t-amber);border:1px solid var(--l-amber);border-radius:var(--r);padding:.7rem 1.1rem;margin:0 0 1rem}
+.banner b{color:var(--amber)}
+.cbar{display:flex;align-items:center;gap:.5rem 1rem;flex-wrap:wrap;border:1px solid var(--coral);border-radius:var(--r);background:var(--t-coral);padding:.7rem 1.1rem;margin:0 0 1rem}
+.cbar>.ic{stroke:var(--coral);width:20px;height:20px}
+div.cbar>span:first-of-type{color:var(--coral);font-weight:500;letter-spacing:.04em}
+.cbar.mine{border-color:var(--amber);background:var(--t-amber);box-shadow:0 0 28px rgba(245,185,85,.25)}
+.cbar.mine>.ic{stroke:var(--amber)}
+div.cbar.mine>span:first-of-type{color:var(--amber)}
+.cbar.plainbar{border-color:var(--rule);background:var(--paper-2)}
+div.cbar.plainbar>span:first-of-type{color:var(--ink);font-weight:400;letter-spacing:0}
+.cbar b{font-weight:500;font-size:1.05rem}
+.cbar .in.num{width:4.4rem;border-radius:999px}
+
+/* sheet */
+.sh-head{display:flex;gap:1.25rem;align-items:center;flex-wrap:wrap}
+.port{width:104px;aspect-ratio:4/5;flex:none;border:1.5px solid var(--amber);border-radius:20px;background:var(--raise);overflow:hidden;display:grid;place-items:center;font-family:var(--display);font-size:2.1rem;letter-spacing:.04em;color:var(--ink);position:relative;padding:0;box-shadow:0 0 32px rgba(245,185,85,.28)}
+.port img{width:100%;height:100%;object-fit:cover;display:block}
+.port.lg{width:100%;font-size:3rem;border-radius:0;border:0;border-bottom:1px solid var(--rule);box-shadow:none}
+.port.lg.none{aspect-ratio:auto;height:5rem;font-size:2rem}
+button.port:hover{box-shadow:0 0 42px rgba(245,185,85,.5)}
+.port .cam{position:absolute;right:6px;bottom:6px;background:var(--amber);color:var(--on-flame);border-radius:999px;padding:.25rem;display:grid}
+.sh-id{min-width:0;flex:1 1 16rem}
+.idtags{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.65rem}
+.sh-btns{display:flex;gap:.5rem;flex-wrap:wrap}
+.vit{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:.6rem;margin:1.25rem 0}
+.vit.three{grid-template-columns:repeat(3,minmax(0,1fr));max-width:26rem}
+@media (max-width:860px){.vit{grid-template-columns:repeat(4,minmax(0,1fr))}.vit>.hd{grid-column:span 2}.vit.three{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.stat{border:1px solid var(--rule);border-radius:var(--r);text-align:center;padding:.8rem .35rem .75rem;background:var(--paper-2);line-height:1.2;min-width:0;color:var(--ink)}
+.stat b{display:block;font-weight:400;font-size:1.85rem;line-height:1.25}
+.stat small{display:block;font-size:.66rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft)}
+.stat small:last-child{font-size:.75rem;font-weight:400;letter-spacing:0;text-transform:none}
+.stat.on{border-color:var(--amber);background:var(--t-amber)}
+button.stat{width:100%}
+button.stat:hover{border-color:var(--amber)}
+.vit>:nth-child(1) b{color:var(--amber)}
+.vit>:nth-child(2) b{color:var(--coral)}
+.vit>:nth-child(3) b{color:var(--sky)}
+.vit>:nth-child(4) b{color:var(--violet)}
+.vit>:nth-child(5) b{color:var(--mint)}
+.vit>:nth-child(6) b{color:var(--amber)}
+.vit>:nth-child(7) b{color:var(--ink-soft)}
+.vit>.on:nth-child(7) b{color:var(--amber)}
+.vit.three>div b{color:var(--violet)}
+.cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:1.25rem;align-items:start}
+@media (max-width:860px){.cols{grid-template-columns:1fr}}
+.hp-nums{display:flex;align-items:baseline;gap:.5rem;flex-wrap:wrap}
+.hp-cur{font-weight:300;font-size:3.75rem;line-height:1}
+.hp-max{font-size:1.15rem;color:#A9C9C3}
+.hp-temp{font-size:.95rem;color:var(--sky);font-weight:500}
+.bar{height:8px;border-radius:999px;background:var(--paper-0);overflow:hidden;margin:.75rem 0 1rem}
+.bar i{display:block;height:100%;border-radius:999px;background:var(--mint);box-shadow:0 0 12px rgba(111,224,197,.7)}
+.bar.low i{background:var(--amber);box-shadow:0 0 12px rgba(245,185,85,.7)}
+.bar.out i{background:var(--coral);box-shadow:none}
+.ds-row{display:flex;align-items:center;gap:.6rem;margin:.35rem 0;font-size:.95rem}
+.ds-row span:first-child{width:5.8rem}
+.abils{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.6rem}
+.abil{border:1px solid var(--rule);border-radius:var(--r);background:var(--paper-2);text-align:center;padding:.75rem .35rem .65rem;line-height:1.2;min-width:0}
+.abil .n{display:block;font-size:.66rem;font-weight:500;color:var(--ink-soft);letter-spacing:.12em;text-transform:uppercase}
+.abil .m{display:block;font-weight:400;font-size:2rem;margin:.1rem 0}
+.abil .s{display:inline-block;color:var(--ink-soft);font-size:.85rem}
+.abil .sv{display:flex;justify-content:center;align-items:center;gap:.35rem;font-size:.82rem;margin-top:.2rem;border:0;background:none;width:100%;padding:.15rem;color:var(--ink-soft)}
+.abil.prof{border-color:var(--amber);background:var(--t-amber)}
+.abil.prof .n,.abil.prof .sv{color:var(--amber)}
+.dot{width:9px;height:9px;border-radius:50%;border:1px solid var(--ink-soft);flex:none;display:inline-block}
+.dot.p{background:var(--amber);border-color:var(--amber)}
+.dot.e{background:var(--violet);border-color:var(--violet);box-shadow:0 0 8px rgba(183,163,255,.75)}
+.sklist{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr));gap:0 1.4rem}
+.sk{display:flex;align-items:center;gap:.6rem;padding:.45rem .1rem;border:0;border-bottom:1px solid var(--rule);background:none;text-align:left;width:100%;color:var(--ink)}
+.sk .ab{font-size:.66rem;letter-spacing:.1em;color:var(--ink-soft)}
+.sk b{margin-left:auto}
+button.sk:hover{background:var(--shade)}
+.row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.3rem .8rem;align-items:center;padding:.75rem 0;border-bottom:1px solid var(--rule)}
+.row .nm{font-weight:500}
+.row .meta{color:var(--ink-soft);font-size:.9rem}
+.hitb{display:inline-flex;gap:.45rem}
+.hitb span{background:var(--t-coral);border-radius:12px;padding:.3rem .8rem;text-align:center;line-height:1.25;min-width:3.8rem;font-weight:500;color:var(--coral)}
+.hitb span small{display:block;font-size:.68rem;font-weight:400;color:#C9B5B2}
+.hitb span.dmg{background:var(--paper-0);color:var(--ink)}
+.hitb span.dmg small{color:var(--ink-soft)}
+.pips{display:inline-flex;gap:.4rem;flex-wrap:wrap;vertical-align:middle}
+.pip{width:20px;height:20px;border-radius:50%;border:0;background:var(--amber);box-shadow:0 0 10px rgba(245,185,85,.7);padding:0}
+.pip.used{background:var(--dim);box-shadow:none}
+.pip.magic{background:var(--violet);box-shadow:0 0 10px rgba(183,163,255,.75)}
+.pip.magic.used{background:var(--dim);box-shadow:none}
+.pip.ok,.pip.bad{background:var(--dim);box-shadow:none}
+.pip.ok.used{background:var(--mint);box-shadow:0 0 10px rgba(111,224,197,.7)}
+.pip.bad.used{background:var(--coral);box-shadow:0 0 10px rgba(255,140,122,.7)}
+.ctr{display:inline-flex;align-items:center;gap:.4rem}
+.ctr b{font-size:1.4rem;font-weight:400;min-width:1.6ch;text-align:center}
+.ctr .btn{padding:0;width:1.9rem;min-height:1.9rem;justify-content:center}
+.edit-card{border:1px solid var(--rule);border-radius:var(--r);padding:.9rem 1rem;margin:.6rem 0;background:var(--paper-2)}
+.kv{display:grid;grid-template-columns:max-content 1fr;gap:.3rem 1rem;margin:.4rem 0}
+.kv dt{color:var(--ink-soft)}
+.kv dd{margin:0;min-width:0}
+.pick-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,250px),1fr));gap:.8rem}
+.pick{text-align:left;border:1px solid var(--rule);border-radius:20px;background:var(--paper-2);padding:1rem 1.15rem;display:flex;flex-direction:column;gap:.3rem;color:var(--ink)}
+.pick:hover{border-color:var(--amber);box-shadow:0 0 24px rgba(245,185,85,.18)}
+.pick b{font-family:var(--display);font-weight:400;font-size:1.3rem;line-height:1.15;letter-spacing:.01em}
+
+/* party */
+.pcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,230px),1fr));gap:1rem}
+.pcard{border:1px solid var(--rule);border-radius:20px;background:var(--paper-2);overflow:hidden;display:flex;flex-direction:column;min-width:0}
+.pcard.me{border-color:var(--amber);box-shadow:0 0 28px rgba(245,185,85,.2)}
+.pcard .body{padding:.85rem 1rem 1rem;display:flex;flex-direction:column;gap:.35rem;min-width:0}
+.pcard h3{font-size:1.35rem;line-height:1.12;overflow-wrap:anywhere}
+.pcard .bar{margin:.2rem 0 .1rem;height:5px}
+.pcards>:nth-child(4n+1) .port.none{background:var(--t-coral);color:var(--coral)}
+.pcards>:nth-child(4n+2) .port.none{background:var(--t-sky);color:var(--sky)}
+.pcards>:nth-child(4n+3) .port.none{background:var(--t-violet);color:var(--violet)}
+.pcards>:nth-child(4n+4) .port.none{background:var(--t-mint);color:var(--mint)}
+@media (max-width:560px){.pcard{flex-direction:row}.pcard .port.lg{width:36%;aspect-ratio:auto;min-height:9.5rem;border-bottom:0;border-right:1px solid var(--rule)}.pcard .port.lg img{position:absolute;inset:0}.pcard .port.lg.none{width:4.2rem;height:auto;min-height:0}.pcard .body{flex:1 1 0}}
+.who{display:flex;align-items:center;gap:.45rem;font-size:.85rem;color:var(--ink-soft);min-width:0}
+.who img{width:20px;height:20px;border-radius:50%;flex:none}
+.who span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lit{width:10px;height:10px;border-radius:50%;background:var(--dim);flex:none;display:inline-block}
+.lit.on{background:var(--amber);box-shadow:0 0 10px rgba(245,185,85,.85)}
+.order{list-style:none;margin:.4rem 0 0;padding:0}
+.order li{display:flex;align-items:center;gap:.7rem;padding:.5rem .7rem;border:1px solid transparent;border-bottom-color:var(--rule)}
+.order li.cur{background:var(--t-amber);border-color:var(--amber);border-radius:12px}
+.order .i{font-weight:500;font-size:1.1rem;width:2ch;text-align:right;color:var(--coral)}
+
+/* map (markers sit on the map picture, which is always light parchment) */
+.mapscroll{overflow:auto;border:1px solid var(--rule);border-radius:20px;background:var(--paper-2);max-height:78vh;overscroll-behavior:contain}
+.maplayer{position:relative;line-height:0}
+.maplayer canvas{display:block;width:100%;height:auto}
+.maplayer.wait{aspect-ratio:16/11;display:grid;place-items:center;line-height:1.4;color:var(--ink-soft)}
+.pin{position:absolute;transform:translate(-50%,-50%);width:28px;height:28px;border-radius:50%;border:2px solid #0E1B22;background:#F5B955;color:#1A1408;font-weight:600;font-size:.85rem;line-height:1;display:grid;place-items:center;padding:0;box-shadow:0 1px 6px rgba(0,0,0,.45)}
+.pin.sel{outline:3px solid #0E1B22;outline-offset:2px}
+.pin.off{opacity:.5;border-style:dashed}
+.here{position:absolute;transform:translate(-50%,-50%);width:24px;height:24px;border-radius:50%;border:3px solid #0E1B22;background:#F5B955;pointer-events:none;animation:halo 2.2s ease-in-out infinite}
+@keyframes halo{0%,100%{box-shadow:0 0 0 5px rgba(245,185,85,.4)}50%{box-shadow:0 0 0 13px rgba(245,185,85,.12)}}
+.ping{position:absolute;transform:translate(-50%,-50%);width:20px;height:20px;border-radius:50%;background:#FF8C7A;border:2px solid #0E1B22;pointer-events:none}
+.ping::after{content:"";position:absolute;inset:-5px;border-radius:50%;border:3px solid #FF8C7A;animation:ring 1s ease-out infinite}
+.ping span{position:absolute;left:50%;top:26px;transform:translateX(-50%);white-space:nowrap;background:#0E1B22;color:#ECE8DC;border-radius:999px;padding:.1rem .6rem;font-size:.8rem;line-height:1.4}
+@keyframes ring{from{transform:scale(1);opacity:.9}to{transform:scale(3.4);opacity:0}}
+.lockb{position:absolute;transform:translate(-50%,-50%);display:flex;align-items:center;gap:.35rem;background:#0E1B22;color:#B7A3FF;border:1px solid #B7A3FF;border-radius:999px;padding:.35rem .8rem;font-size:.86rem;line-height:1.2;white-space:nowrap;max-width:60%}
+.lockb span{overflow:hidden;text-overflow:ellipsis}
+.lockb:hover{background:#1E2145}
+.maptools{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin:.7rem 0}
+.map-layout{display:grid;grid-template-columns:minmax(0,2.2fr) minmax(240px,1fr);gap:1.25rem;align-items:start}
+@media (max-width:900px){.map-layout{grid-template-columns:1fr}}
+.place{border:1px solid var(--rule);border-radius:var(--r);background:var(--paper-2);padding:1rem 1.1rem}
+.edcanvas{cursor:crosshair}
+
+/* chronicle */
+.entry{max-width:66ch;padding:1.1rem 0;border-bottom:1px solid var(--rule)}
+.entry h2{font-size:1.6rem;line-height:1.15;margin:0 0 .2rem}
+.entry .sub{color:var(--ink-soft);margin:0 0 .5rem}
+.entry img,.handout img,.npc img{border-radius:12px;border:1px solid var(--rule);margin:.4rem 0;display:block;max-width:100%}
+.handouts{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,280px),1fr));gap:1.2rem;margin-top:.6rem}
+.handout{background:var(--t-amber);border:1px solid var(--l-amber);padding:1.1rem 1.25rem 1rem;border-radius:20px;min-width:0}
+.handout h3{font-family:var(--text);font-size:.7rem;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--amber);margin:0 0 .5rem}
+.handout .txt{font-family:var(--script);font-style:italic;font-weight:500;font-size:1.4rem;line-height:1.3}
+.sealed{border:1px dashed var(--violet);border-radius:20px;padding:1rem 1.15rem;background:var(--t-violet);max-width:66ch;margin:.8rem 0}
+.sealed h3{display:flex;align-items:center;gap:.5rem;font-size:1.25rem}
+.sealed h3 .ic{stroke:var(--violet);width:18px;height:18px}
+.npcs{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,230px),1fr));gap:1rem}
+.npc{border:1px solid var(--rule);border-radius:20px;background:var(--paper-2);padding:.9rem 1rem;min-width:0}
+.npc h3{font-size:1.3rem}
+.priv{border:1px solid var(--violet);border-radius:var(--r);background:var(--t-violet);margin:.6rem 0;max-width:66ch}
+.priv>button{display:flex;gap:.6rem;align-items:center;width:100%;text-align:left;border:0;background:none;padding:.8rem 1rem;font-family:var(--display);font-size:1.15rem;letter-spacing:.02em;color:var(--ink)}
+.priv>button .ic{stroke:var(--violet)}
+.priv .in-body{padding:0 1rem 1rem}
+.pwbox{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;max-width:30rem}
+.pwbox .in{flex:1 1 10rem;width:auto;border-radius:999px}
+
+/* notes */
+.board-item{border-bottom:1px solid var(--rule);padding:.7rem 0;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.2rem .6rem}
+.sheetcheat h3{margin:1.3rem 0 .3rem;color:var(--amber)}
+.sheetcheat ul{margin:.2rem 0 .6rem;padding-left:1.1rem;max-width:72ch}
+.sheetcheat li{margin:.2rem 0}
+
+/* game master */
+.gm-row{display:flex;align-items:center;gap:.6rem;padding:.55rem 0;border-bottom:1px solid var(--rule);flex-wrap:wrap}
+.gm-row .t{flex:1 1 12rem;min-width:0;border:0;background:none;text-align:left;padding:.1rem 0;font-weight:500;overflow:hidden;text-overflow:ellipsis;color:var(--ink)}
+.gm-row .t:hover{color:var(--amber)}
+table.roster{border-collapse:collapse;width:100%;min-width:620px}
+table.roster th{font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft);font-weight:500;text-align:left;padding:.3rem .6rem .45rem 0;border-bottom:1px solid var(--rule)}
+table.roster td{padding:.55rem .6rem .55rem 0;border-bottom:1px solid var(--rule);vertical-align:middle}
+.scrollx{overflow-x:auto}
+.steps{counter-reset:s;list-style:none;padding:0;margin:.6rem 0;max-width:66ch}
+.steps li{counter-increment:s;display:grid;grid-template-columns:2rem minmax(0,1fr);gap:.2rem .6rem;padding:.75rem 0;border-bottom:1px solid var(--rule)}
+.steps li::before{content:counter(s);font-family:var(--display);font-size:1.5rem;line-height:1.15;color:var(--amber)}
+
+/* overlays */
+.modal{position:fixed;inset:0;z-index:70;background:rgba(5,10,14,.72);display:grid;place-items:center;padding:calc(1rem + env(safe-area-inset-top,0px)) max(1rem,env(safe-area-inset-right,0px)) calc(1rem + env(safe-area-inset-bottom,0px)) max(1rem,env(safe-area-inset-left,0px));overflow:auto}
+.modal>div{background:var(--paper-2);border:1px solid var(--rule);border-radius:24px;padding:1.3rem 1.4rem 1.4rem;width:min(34rem,100%);max-height:100%;overflow:auto;box-shadow:0 24px 60px rgba(0,0,0,.5)}
+.modal .box{background:var(--paper);border-radius:var(--r)}
+.toasts{position:fixed;right:max(1rem,env(safe-area-inset-right,0px));bottom:calc(1rem + env(safe-area-inset-bottom,0px));z-index:80;display:flex;flex-direction:column;gap:.5rem;width:min(360px,calc(100vw - 2rem))}
+@media (max-width:760px){.toasts{left:max(1rem,env(safe-area-inset-left,0px));right:max(1rem,env(safe-area-inset-right,0px));width:auto;bottom:calc(5.4rem + env(safe-area-inset-bottom,0px))}}
+.toast{background:var(--ink);color:#12202A;font-weight:500;border-radius:14px;padding:.75rem 1.05rem;box-shadow:0 10px 28px rgba(0,0,0,.5)}
+.toast.err{background:var(--coral);color:var(--on-coral)}
+.boot{padding:2.5rem 0}
+.boot .h1{margin-bottom:.4rem}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+
+</head>
+<body>
+<div id="root"><main class="wrap"><div class="boot"><h1 class="h1">Hollowmere</h1><p class="lead">Die Laternen werden angezündet …</p></div></main></div>
+<script type="application/json" id="heroes">[{"tpl":"brannoc","plays":"Stand at the front, protect your friends, hit hard.","v":1,"name":"Brannoc Hale","cls":"Fighter","sub":"Champion","lvl":3,"race":"Human","bg":"","align":"","xp":0,"size":"","age":"","look":"A big, quiet caravan guard with a soft spot for strays.","traits":"","ideals":"","bonds":"","flaws":"","story":"","ab":{"str":16,"dex":12,"con":15,"int":10,"wis":12,"cha":10},"saves":["str","con"],"skills":{"Athletics":1,"Perception":1,"Intimidation":1,"Animal Handling":1},"joat":false,"pbO":"","ac":18,"acNote":"Chain mail and shield","initMisc":0,"speed":"30 ft","hpMax":28,"hp":28,"tmp":0,"hd":10,"hdUsed":0,"ds":[0,0],"insp":false,"cond":[],"senses":"","langs":"Common, Halfling","profs":"All armour and shields. All simple and martial weapons.","atk":[{"id":"hd","n":"Longsword","ab":"","prof":true,"bonus":5,"dmg":"1d8+5","dab":false,"ty":"slashing","note":"Melee, reach 5 ft"},{"id":"he","n":"Javelin","ab":"","prof":true,"bonus":5,"dmg":"1d6+3","dab":false,"ty":"piercing","note":"Thrown, 30 ft (120 ft with disadvantage)"}],"cast":{"type":"","ab":"","slots":[0,0,0,0,0,0,0,0,0],"used":[0,0,0,0,0,0,0,0,0]},"spells":[],"feats":[{"id":"h8","n":"Second Wind","src":"Fighter","d":"Bonus action. Regain 1d10 + 3 hit points.","max":1,"used":0,"rest":"short"},{"id":"h9","n":"Action Surge","src":"Fighter","d":"Take one extra action on your turn.","max":1,"used":0,"rest":"short"},{"id":"ha","n":"Improved Critical","src":"","d":"Your weapon attacks score a critical hit on a 19 or a 20. The dice roller knows.","max":0,"used":0,"rest":""},{"id":"hb","n":"Fighting Style: Dueling","src":"","d":"+2 damage with a one-handed weapon and no other weapon. Already in your longsword damage.","max":0,"used":0,"rest":""},{"id":"hc","n":"Second Wind and Action Surge","src":"","d":"Both come back after a short or long rest. Use them.","max":0,"used":0,"rest":""}],"items":[{"id":"h1","n":"Chain mail","q":1,"note":""},{"id":"h2","n":"Shield","q":1,"note":""},{"id":"h3","n":"Longsword","q":1,"note":""},{"id":"h4","n":"Javelins","q":4,"note":""},{"id":"h5","n":"Pumpkin helmet","q":1,"note":""},{"id":"h6","n":"50 ft of rope","q":1,"note":""},{"id":"h7","n":"Bedroll","q":1,"note":""}],"coins":{"cp":0,"sp":0,"gp":10,"pp":0},"shareHp":true},{"tpl":"ida","plays":"Heal your friends and burn the things that hide in the dark.","v":1,"name":"Sister Ida Morrow","cls":"Cleric","sub":"Light domain","lvl":3,"race":"Human","bg":"","align":"","xp":0,"size":"","age":"","look":"A priestess of the Dawn, sent to bless Hollowmere’s new lamplighter, except nobody has taken the job.","traits":"","ideals":"","bonds":"","flaws":"","story":"","ab":{"str":10,"dex":12,"con":14,"int":10,"wis":16,"cha":13},"saves":["wis","cha"],"skills":{"Insight":1,"Medicine":1,"Religion":1,"Persuasion":1},"joat":false,"pbO":"","ac":16,"acNote":"Chain shirt and shield","initMisc":0,"speed":"30 ft","hpMax":24,"hp":24,"tmp":0,"hd":8,"hdUsed":0,"ds":[0,0],"insp":false,"cond":[],"senses":"","langs":"Common, Celestial","profs":"Light and medium armour, shields. Simple weapons.","atk":[{"id":"hr","n":"Mace","ab":"","prof":true,"bonus":2,"dmg":"1d6","dab":false,"ty":"bludgeoning","note":"Melee, reach 5 ft"}],"cast":{"type":"full","ab":"wis","slots":[4,2,0,0,0,0,0,0,0],"used":[0,0,0,0,0,0,0,0,0]},"spells":[{"id":"hs","n":"Sacred Flame","l":0,"prep":true,"t":"Action","r":"60 ft","c":false,"rit":false,"d":"The target makes a Dex save (DC 13) or takes 1d8 radiant. Cover doesn’t help it."},{"id":"ht","n":"Light","l":0,"prep":true,"t":"Action","r":"Touch","c":false,"rit":false,"d":"An object sheds bright light 20 ft around for an hour."},{"id":"hu","n":"Thaumaturgy","l":0,"prep":true,"t":"Action","r":"30 ft","c":false,"rit":false,"d":"Small wonders: a booming voice, flickering flames, a tremor, a door flung open."},{"id":"hv","n":"Bless","l":1,"prep":true,"t":"Action","r":"30 ft","c":true,"rit":false,"d":"Up to three creatures add 1d4 to attack rolls and saving throws for a minute."},{"id":"hw","n":"Cure Wounds","l":1,"prep":true,"t":"Action","r":"Touch","c":false,"rit":false,"d":"A creature regains 1d8 + 3 hit points."},{"id":"hx","n":"Healing Word","l":1,"prep":true,"t":"Bonus action","r":"60 ft","c":false,"rit":false,"d":"A creature you can see regains 1d4 + 3 hit points. Great for getting a fallen friend back up."},{"id":"hy","n":"Guiding Bolt","l":1,"prep":true,"t":"Action","r":"120 ft","c":false,"rit":false,"d":"Ranged spell attack. On a hit, 4d6 radiant, and the next attack against the target has advantage."},{"id":"hz","n":"Burning Hands","l":1,"prep":true,"t":"Action","r":"15 ft cone","c":false,"rit":false,"d":"Everything in the cone makes a Dex save (DC 13): 3d6 fire, half on a success."},{"id":"h10","n":"Faerie Fire","l":1,"prep":true,"t":"Action","r":"60 ft","c":true,"rit":false,"d":"Creatures in a 20 ft cube make a Dex save or glow. Attacks against glowing creatures have advantage, and they can’t turn invisible."},{"id":"h11","n":"Spiritual Weapon","l":2,"prep":true,"t":"Bonus action","r":"60 ft","c":false,"rit":false,"d":"A floating weapon of light appears for a minute. Melee spell attack, 1d8 + 3 force. Each turn, move it and attack again as a bonus action."},{"id":"h12","n":"Scorching Ray","l":2,"prep":true,"t":"Action","r":"120 ft","c":false,"rit":false,"d":"Three rays of fire. Each one is a separate ranged spell attack dealing 2d6 fire."},{"id":"h13","n":"Flaming Sphere","l":2,"prep":true,"t":"Action","r":"60 ft","c":true,"rit":false,"d":"A ball of fire. Creatures that end a turn next to it make a Dex save: 2d6 fire, half on a success. Move it 30 ft as a bonus action."},{"id":"h14","n":"Lesser Restoration","l":2,"prep":true,"t":"Action","r":"Touch","c":false,"rit":false,"d":"End one disease, or blinded, deafened, paralysed or poisoned."}],"feats":[{"id":"hm","n":"Channel Divinity","src":"Cleric","d":"Radiance of the Dawn: every enemy within 30 ft makes a Con save (DC 13), taking 2d10 + 3 radiant, or half on a success, and magical darkness nearby vanishes. Or Turn Undead: undead within 30 ft make a Wis save or flee for a minute.","max":1,"used":0,"rest":"short"},{"id":"hn","n":"Warding Flare","src":"Cleric","d":"Reaction when a creature you can see attacks you: a flash of light gives the attack disadvantage.","max":3,"used":0,"rest":"long"},{"id":"ho","n":"Light domain","src":"","d":"Your god is the dawn. Your fire and light spells are always prepared, and shadows hate you.","max":0,"used":0,"rest":""},{"id":"hp","n":"Radiance of the Dawn","src":"","d":"Your best tool tonight. It’s under Limited uses in Actions.","max":0,"used":0,"rest":""},{"id":"hq","n":"Spellcasting","src":"","d":"You can change which spells you have prepared after a long rest. Tonight, keep these.","max":0,"used":0,"rest":""}],"items":[{"id":"hf","n":"Chain shirt","q":1,"note":""},{"id":"hg","n":"Shield","q":1,"note":""},{"id":"hh","n":"Mace","q":1,"note":""},{"id":"hi","n":"Holy symbol (a brass sun)","q":1,"note":""},{"id":"hj","n":"Prayer book","q":1,"note":""},{"id":"hk","n":"Candles","q":5,"note":""},{"id":"hl","n":"Tinderbox","q":1,"note":""}],"coins":{"cp":0,"sp":0,"gp":8,"pp":0},"shareHp":true},{"tpl":"wren","plays":"Sneak, pick locks, and stab whatever your friends are already fighting.","v":1,"name":"Wren Ashcombe","cls":"Rogue","sub":"Thief","lvl":3,"race":"Halfling","bg":"","align":"","xp":0,"size":"","age":"","look":"A cheerful pickpocket working the festival crowds.","traits":"","ideals":"","bonds":"","flaws":"","story":"","ab":{"str":8,"dex":17,"con":12,"int":12,"wis":12,"cha":14},"saves":["dex","int"],"skills":{"Stealth":2,"Sleight of Hand":2,"Acrobatics":1,"Deception":1,"Perception":1,"Investigation":1},"joat":false,"pbO":"","ac":14,"acNote":"Leather armour","initMisc":0,"speed":"25 ft","hpMax":21,"hp":21,"tmp":0,"hd":8,"hdUsed":0,"ds":[0,0],"insp":false,"cond":[],"senses":"","langs":"Common, Halfling, Thieves’ Cant","profs":"Light armour. Simple weapons, shortswords, rapiers, longswords, hand crossbows. Thieves’ tools +7.","atk":[{"id":"h1h","n":"Shortsword","ab":"","prof":true,"bonus":5,"dmg":"1d6+3","dab":false,"ty":"piercing","note":"Melee, reach 5 ft"},{"id":"h1i","n":"Shortbow","ab":"","prof":true,"bonus":5,"dmg":"1d6+3","dab":false,"ty":"piercing","note":"Ranged, 80 ft (320 ft with disadvantage)"},{"id":"h1j","n":"Sneak Attack","ab":"none","prof":true,"bonus":0,"dmg":"2d6","dab":false,"ty":"extra","note":"Once per turn, add this to a hit if you had advantage or a friend is next to the target."}],"cast":{"type":"","ab":"","slots":[0,0,0,0,0,0,0,0,0],"used":[0,0,0,0,0,0,0,0,0]},"spells":[],"feats":[{"id":"h1b","n":"Cunning Action","src":"","d":"Every turn, a bonus action to Dash, Disengage or Hide.","max":0,"used":0,"rest":""},{"id":"h1c","n":"Fast Hands","src":"","d":"Your bonus action can also pick a pocket, use thieves’ tools, or use an object.","max":0,"used":0,"rest":""},{"id":"h1d","n":"Second-Story Work","src":"","d":"Climbing costs you no extra movement.","max":0,"used":0,"rest":""},{"id":"h1e","n":"Lucky","src":"","d":"When you roll a 1 on a d20, you roll again. This sheet does it for you.","max":0,"used":0,"rest":""},{"id":"h1f","n":"Halfling Nimbleness","src":"","d":"You can move through the space of anyone bigger than you.","max":0,"used":0,"rest":""},{"id":"h1g","n":"Brave","src":"","d":"Advantage on saves against being frightened.","max":0,"used":0,"rest":""}],"items":[{"id":"h15","n":"Leather armour","q":1,"note":""},{"id":"h16","n":"Shortsword","q":1,"note":""},{"id":"h17","n":"Shortbow and 20 arrows","q":1,"note":""},{"id":"h18","n":"Thieves’ tools","q":1,"note":""},{"id":"h19","n":"Cat ears","q":1,"note":""},{"id":"h1a","n":"A bag of stolen sweets","q":1,"note":""}],"coins":{"cp":0,"sp":0,"gp":14,"pp":0},"shareHp":true},{"tpl":"elowen","plays":"Stay at the back, cast big spells, and bend fate with your Portent dice.","v":1,"name":"Elowen Vey","cls":"Wizard","sub":"School of Divination","lvl":3,"race":"Elf","bg":"","align":"","xp":0,"size":"","age":"","look":"A folklore scholar collecting ghost stories for a book.","traits":"","ideals":"","bonds":"","flaws":"","story":"","ab":{"str":8,"dex":14,"con":13,"int":16,"wis":12,"cha":10},"saves":["int","wis"],"skills":{"Arcana":1,"History":1,"Investigation":1,"Perception":1},"joat":false,"pbO":"","ac":12,"acNote":"15 with Mage Armor","initMisc":0,"speed":"30 ft","hpMax":17,"hp":17,"tmp":0,"hd":6,"hdUsed":0,"ds":[0,0],"insp":false,"cond":[],"senses":"Darkvision 60 ft","langs":"Common, Elvish, Sylvan","profs":"Daggers, darts, slings, quarterstaffs, light crossbows.","atk":[{"id":"h1w","n":"Dagger","ab":"","prof":true,"bonus":4,"dmg":"1d4+2","dab":false,"ty":"piercing","note":"Melee, or thrown 20 ft"}],"cast":{"type":"full","ab":"int","slots":[4,2,0,0,0,0,0,0,0],"used":[0,0,0,0,0,0,0,0,0]},"spells":[{"id":"h1x","n":"Fire Bolt","l":0,"prep":true,"t":"Action","r":"120 ft","c":false,"rit":false,"d":"Ranged spell attack, 1d10 fire. Lights unattended flammable things."},{"id":"h1y","n":"Light","l":0,"prep":true,"t":"Action","r":"Touch","c":false,"rit":false,"d":"An object sheds bright light 20 ft around for an hour."},{"id":"h1z","n":"Mage Hand","l":0,"prep":true,"t":"Action","r":"30 ft","c":false,"rit":false,"d":"A ghostly hand that can carry up to 10 lb, open doors and fetch things, for a minute."},{"id":"h20","n":"Prestidigitation","l":0,"prep":true,"t":"Action","r":"10 ft","c":false,"rit":false,"d":"Harmless tricks: light a candle, chill a drink, clean a cloak, make a small sound or smell."},{"id":"h21","n":"Mage Armor","l":1,"prep":true,"t":"Action","r":"Touch","c":false,"rit":false,"d":"Your AC becomes 15 for 8 hours. Cast it before the night gets busy."},{"id":"h22","n":"Magic Missile","l":1,"prep":true,"t":"Action","r":"120 ft","c":false,"rit":false,"d":"Three glowing darts that never miss. Each deals 1d4 + 1 force; aim them at one target or spread them out."},{"id":"h23","n":"Shield","l":1,"prep":true,"t":"Reaction","r":"Self","c":false,"rit":false,"d":"When something hits you: +5 AC until your next turn, which may turn the hit into a miss."},{"id":"h24","n":"Sleep","l":1,"prep":true,"t":"Action","r":"90 ft","c":false,"rit":false,"d":"Roll 5d8. Creatures in a 20 ft radius with that many hit points or fewer fall asleep, weakest first. Undead don’t sleep."},{"id":"h25","n":"Detect Magic","l":1,"prep":true,"t":"Action or ritual","r":"Self","c":true,"rit":true,"d":"For ten minutes, sense magic within 30 ft and see its aura. As a ritual it takes 10 minutes and no slot."},{"id":"h26","n":"Misty Step","l":2,"prep":true,"t":"Bonus action","r":"Self","c":false,"rit":false,"d":"Teleport up to 30 ft to a spot you can see."},{"id":"h27","n":"Hold Person","l":2,"prep":true,"t":"Action","r":"60 ft","c":true,"rit":false,"d":"A humanoid makes a Wis save or is paralysed. It repeats the save at the end of each of its turns."}],"feats":[{"id":"h1q","n":"Portent","src":"Wizard","d":"After a long rest, roll two d20s and keep the numbers. Twice tonight, you can replace any roll you see, friend or foe, with one of them. Say so before the roll.","max":2,"used":0,"rest":"long"},{"id":"h1r","n":"Arcane Recovery","src":"Wizard","d":"Once a day, after a short rest, get back spent spell slots worth up to 2 levels: one 2nd-level slot, or two 1st-level slots.","max":1,"used":0,"rest":"long"},{"id":"h1s","n":"Portent","src":"","d":"Your signature trick. Tell the table you’re using it, then swap a roll for one of your dice. It’s under Limited uses in Actions.","max":0,"used":0,"rest":""},{"id":"h1t","n":"Fey Ancestry","src":"","d":"Advantage on saves against being charmed, and magic can’t put you to sleep.","max":0,"used":0,"rest":""},{"id":"h1u","n":"Trance","src":"","d":"You don’t sleep. Four hours of meditation does the job.","max":0,"used":0,"rest":""},{"id":"h1v","n":"Spellbook","src":"","d":"Your spells live in your book. You can copy new ones you find written down.","max":0,"used":0,"rest":""}],"items":[{"id":"h1k","n":"Spellbook","q":1,"note":""},{"id":"h1l","n":"A notebook full of ghost stories","q":1,"note":""},{"id":"h1m","n":"Dagger","q":1,"note":""},{"id":"h1n","n":"Component pouch","q":1,"note":""},{"id":"h1o","n":"Ink, quill and parchment","q":1,"note":""},{"id":"h1p","n":"Witch’s hat","q":1,"note":""}],"coins":{"cp":0,"sp":0,"gp":12,"pp":0},"shareHp":true},{"tpl":"corvin","plays":"Talk your way through anything, and make everyone around you better.","v":1,"name":"Corvin Crane","cls":"Bard","sub":"College of Lore","lvl":3,"race":"Tiefling","bg":"","align":"","xp":0,"size":"","age":"","look":"A travelling fiddler hired to play the festival, all charm and borrowed money.","traits":"","ideals":"","bonds":"","flaws":"","story":"","ab":{"str":8,"dex":14,"con":12,"int":10,"wis":10,"cha":17},"saves":["dex","cha"],"skills":{"Performance":1,"Persuasion":1,"Deception":1,"Insight":1,"History":1,"Arcana":1,"Perception":1},"joat":true,"pbO":"","ac":13,"acNote":"Leather armour","initMisc":0,"speed":"30 ft","hpMax":21,"hp":21,"tmp":0,"hd":8,"hdUsed":0,"ds":[0,0],"insp":false,"cond":[],"senses":"Darkvision 60 ft","langs":"Common, Infernal, Elvish","profs":"Light armour. Simple weapons, hand crossbows, longswords, rapiers, shortswords. Fiddle, flute, lute.","atk":[{"id":"h2j","n":"Rapier","ab":"","prof":true,"bonus":4,"dmg":"1d8+2","dab":false,"ty":"piercing","note":"Melee, reach 5 ft"}],"cast":{"type":"full","ab":"cha","slots":[4,2,0,0,0,0,0,0,0],"used":[0,0,0,0,0,0,0,0,0]},"spells":[{"id":"h2k","n":"Vicious Mockery","l":0,"prep":true,"t":"Action","r":"60 ft","c":false,"rit":false,"d":"Insult a creature. It makes a Wis save (DC 13) or takes 1d4 psychic and has disadvantage on its next attack."},{"id":"h2l","n":"Minor Illusion","l":0,"prep":true,"t":"Action","r":"30 ft","c":false,"rit":false,"d":"Create a sound, or a still image no bigger than a 5 ft cube, for a minute."},{"id":"h2m","n":"Thaumaturgy","l":0,"prep":true,"t":"Action","r":"30 ft","c":false,"rit":false,"d":"Small wonders: a booming voice, flickering flames, a tremor, a door flung open."},{"id":"h2n","n":"Healing Word","l":1,"prep":true,"t":"Bonus action","r":"60 ft","c":false,"rit":false,"d":"A creature you can see regains 1d4 + 3 hit points."},{"id":"h2o","n":"Dissonant Whispers","l":1,"prep":true,"t":"Action","r":"60 ft","c":false,"rit":false,"d":"A creature makes a Wis save. On a fail, 3d6 psychic and it must use its reaction to run away from you. Half damage on a success."},{"id":"h2p","n":"Faerie Fire","l":1,"prep":true,"t":"Action","r":"60 ft","c":true,"rit":false,"d":"Creatures in a 20 ft cube make a Dex save or glow. Attacks against glowing creatures have advantage, and they can’t turn invisible."},{"id":"h2q","n":"Tasha’s Hideous Laughter","l":1,"prep":true,"t":"Action","r":"30 ft","c":true,"rit":false,"d":"A creature makes a Wis save or collapses laughing: prone and unable to act. It repeats the save at the end of each of its turns."},{"id":"h2r","n":"Shatter","l":2,"prep":true,"t":"Action","r":"60 ft","c":false,"rit":false,"d":"A painful ringing in a 10 ft sphere. Con save (DC 13): 3d8 thunder, half on a success."},{"id":"h2s","n":"Calm Emotions","l":2,"prep":true,"t":"Action","r":"60 ft","c":true,"rit":false,"d":"Creatures in a 20 ft sphere make a Cha save or lose their fear, or their anger, for a minute."}],"feats":[{"id":"h2d","n":"Bardic Inspiration","src":"Bard","d":"Bonus action: give a friend within 60 ft a d6. Within 10 minutes they can add it to one attack, check or save. Or spend one on Cutting Words.","max":3,"used":0,"rest":"long"},{"id":"h2e","n":"Hellish Rebuke","src":"Bard","d":"Reaction when a creature you can see within 60 ft hurts you: it makes a Dex save (DC 13), taking 2d10 fire, or half on a success.","max":1,"used":0,"rest":"long"},{"id":"h2f","n":"Jack of All Trades","src":"","d":"+1 to every ability check you’re not proficient in. Already included.","max":0,"used":0,"rest":""},{"id":"h2g","n":"Cutting Words","src":"","d":"Reaction: spend a Bardic Inspiration to subtract a d6 from an enemy’s attack, check or damage roll.","max":0,"used":0,"rest":""},{"id":"h2h","n":"Song of Rest","src":"","d":"During a short rest, your music heals each friend who spends hit dice an extra 1d6.","max":0,"used":0,"rest":""},{"id":"h2i","n":"Infernal Legacy","src":"","d":"Fire damage is halved for you. Once a day you can cast Hellish Rebuke.","max":0,"used":0,"rest":""}],"items":[{"id":"h28","n":"Fiddle","q":1,"note":""},{"id":"h29","n":"Rapier","q":1,"note":""},{"id":"h2a","n":"Leather armour","q":1,"note":""},{"id":"h2b","n":"Gold horn paint","q":1,"note":""},{"id":"h2c","n":"A borrowed coat","q":1,"note":""}],"coins":{"cp":0,"sp":0,"gp":3,"pp":0},"shareHp":true},{"tpl":"gorrum","plays":"Get angry, get stuck in, and refuse to fall down.","v":1,"name":"Gorrum Ashfist","cls":"Barbarian","sub":"Totem Warrior, bear","lvl":3,"race":"Half-orc","bg":"","align":"","xp":0,"size":"","age":"","look":"A gentle woodcutter built like a door.","traits":"","ideals":"","bonds":"","flaws":"","story":"","ab":{"str":17,"dex":14,"con":16,"int":8,"wis":12,"cha":10},"saves":["str","con"],"skills":{"Athletics":1,"Survival":1,"Intimidation":1,"Perception":1},"joat":false,"pbO":"","ac":15,"acNote":"No armour: 10 + Dex + Con","initMisc":0,"speed":"30 ft","hpMax":35,"hp":35,"tmp":0,"hd":12,"hdUsed":0,"ds":[0,0],"insp":false,"cond":[],"senses":"Darkvision 60 ft","langs":"Common, Orc","profs":"Light and medium armour, shields. All weapons.","atk":[{"id":"h34","n":"Greataxe","ab":"","prof":true,"bonus":5,"dmg":"1d12+3","dab":false,"ty":"slashing","note":"Melee, reach 5 ft"},{"id":"h35","n":"Greataxe while raging","ab":"","prof":true,"bonus":5,"dmg":"1d12+5","dab":false,"ty":"slashing","note":"Same axe, angrier"},{"id":"h36","n":"Handaxe","ab":"","prof":true,"bonus":5,"dmg":"1d6+3","dab":false,"ty":"slashing","note":"Melee, or thrown 20 ft"}],"cast":{"type":"","ab":"","slots":[0,0,0,0,0,0,0,0,0],"used":[0,0,0,0,0,0,0,0,0]},"spells":[],"feats":[{"id":"h2y","n":"Rage","src":"Barbarian","d":"Bonus action, lasts a minute: +2 damage with Strength attacks, advantage on Strength checks and saves, and you take half damage from everything except psychic. No spells while raging.","max":3,"used":0,"rest":"long"},{"id":"h2z","n":"Relentless Endurance","src":"Barbarian","d":"When you drop to 0 hit points, you drop to 1 instead. This sheet does it for you.","max":1,"used":0,"rest":"long"},{"id":"h30","n":"Reckless Attack","src":"","d":"On your first attack in a turn, choose to get advantage on all your melee attacks this turn. Enemies get advantage against you until your next turn.","max":0,"used":0,"rest":""},{"id":"h31","n":"Danger Sense","src":"","d":"Advantage on Dex saves against things you can see, like traps and spells.","max":0,"used":0,"rest":""},{"id":"h32","n":"Savage Attacks","src":"","d":"When you score a critical hit with a melee weapon, roll one extra weapon die. The dice roller knows.","max":0,"used":0,"rest":""},{"id":"h33","n":"Menacing","src":"","d":"You’re proficient in Intimidation. Obviously.","max":0,"used":0,"rest":""}],"items":[{"id":"h2t","n":"Greataxe","q":1,"note":""},{"id":"h2u","n":"Handaxes","q":2,"note":""},{"id":"h2v","n":"Bedsheet with two eyeholes","q":1,"note":""},{"id":"h2w","n":"Woodcutter’s saw","q":1,"note":""},{"id":"h2x","n":"Waterskin","q":1,"note":""}],"coins":{"cp":0,"sp":0,"gp":6,"pp":0},"shareHp":true},{"tpl":"aldric","plays":"A walking wall with a glowing hammer and a lot of healing in his hands.","v":1,"name":"Sir Aldric Fenn","cls":"Paladin","sub":"Oath of Devotion","lvl":3,"race":"Dwarf","bg":"","align":"","xp":0,"size":"","age":"","look":"An old knight and an older friend of Barnaby Wick, who arrived too late for the funeral.","traits":"","ideals":"","bonds":"","flaws":"","story":"","ab":{"str":16,"dex":10,"con":16,"int":10,"wis":12,"cha":14},"saves":["wis","cha"],"skills":{"Athletics":1,"Religion":1,"Persuasion":1,"Insight":1},"joat":false,"pbO":"","ac":19,"acNote":"Chain mail, shield, Defense style","initMisc":0,"speed":"25 ft","hpMax":34,"hp":34,"tmp":0,"hd":10,"hdUsed":0,"ds":[0,0],"insp":false,"cond":[],"senses":"Darkvision 60 ft","langs":"Common, Dwarvish","profs":"All armour and shields. All weapons.","atk":[{"id":"h3k","n":"Warhammer","ab":"","prof":true,"bonus":5,"dmg":"1d8+3","dab":false,"ty":"bludgeoning","note":"Melee, reach 5 ft"},{"id":"h3l","n":"Divine Smite","ab":"none","prof":true,"bonus":0,"dmg":"2d8","dab":false,"ty":"radiant","note":"After you hit, spend a spell slot to add this."},{"id":"h3m","n":"Divine Smite on undead","ab":"none","prof":true,"bonus":0,"dmg":"3d8","dab":false,"ty":"radiant","note":"The same, against undead or fiends."}],"cast":{"type":"half","ab":"cha","slots":[3,0,0,0,0,0,0,0,0],"used":[0,0,0,0,0,0,0,0,0]},"spells":[{"id":"h3n","n":"Bless","l":1,"prep":true,"t":"Action","r":"30 ft","c":true,"rit":false,"d":"Up to three creatures add 1d4 to attack rolls and saving throws for a minute."},{"id":"h3o","n":"Cure Wounds","l":1,"prep":true,"t":"Action","r":"Touch","c":false,"rit":false,"d":"A creature regains 1d8 + 2 hit points."},{"id":"h3p","n":"Shield of Faith","l":1,"prep":true,"t":"Bonus action","r":"60 ft","c":true,"rit":false,"d":"A creature gets +2 AC for up to 10 minutes."},{"id":"h3q","n":"Protection from Evil and Good","l":1,"prep":true,"t":"Action","r":"Touch","c":true,"rit":false,"d":"Aberrations, celestials, elementals, fey, fiends and undead have disadvantage attacking the target, and can’t charm or frighten it."},{"id":"h3r","n":"Sanctuary","l":1,"prep":true,"t":"Bonus action","r":"30 ft","c":false,"rit":false,"d":"Anyone who attacks the target must make a Wis save (DC 12) or pick someone else. Ends if the target attacks."}],"feats":[{"id":"h3d","n":"Lay on Hands","src":"Paladin","d":"Touch a creature and give it hit points from this pool, as many as you like. Or spend 5 to cure a disease or poison.","max":15,"used":0,"rest":"long"},{"id":"h3e","n":"Channel Divinity","src":"Paladin","d":"Sacred Weapon: for a minute, +2 to attack rolls and your weapon glows. Or Turn the Unholy: fiends and undead within 30 ft make a Wis save or flee.","max":1,"used":0,"rest":"short"},{"id":"h3f","n":"Divine Sense","src":"Paladin","d":"Action: until your next turn, you know where celestials, fiends and undead are within 60 ft.","max":3,"used":0,"rest":"long"},{"id":"h3g","n":"Divine Smite","src":"","d":"When your hammer hits, you can spend a spell slot for extra radiant damage. It shares slots with your spells.","max":0,"used":0,"rest":""},{"id":"h3h","n":"Fighting Style: Defense","src":"","d":"+1 AC while wearing armour. Already included.","max":0,"used":0,"rest":""},{"id":"h3i","n":"Dwarven Resilience","src":"","d":"Advantage on saves against poison, and poison damage is halved.","max":0,"used":0,"rest":""},{"id":"h3j","n":"Divine Health","src":"","d":"Disease can’t touch you.","max":0,"used":0,"rest":""}],"items":[{"id":"h37","n":"Chain mail","q":1,"note":""},{"id":"h38","n":"Shield","q":1,"note":""},{"id":"h39","n":"Warhammer","q":1,"note":""},{"id":"h3a","n":"Holy symbol","q":1,"note":""},{"id":"h3b","n":"Paper crown","q":1,"note":""},{"id":"h3c","n":"Barnaby’s last letter (mostly about fishing)","q":1,"note":""}],"coins":{"cp":0,"sp":0,"gp":15,"pp":0},"shareHp":true},{"tpl":"tamsin","plays":"Shoot things from far away, and know every path and person in the valley.","v":1,"name":"Tamsin Reed","cls":"Ranger","sub":"Hunter","lvl":3,"race":"Half-elf","bg":"","align":"","xp":0,"size":"","age":"","look":"Hollowmere born and bred, the village’s hunter and guide.","traits":"","ideals":"","bonds":"","flaws":"","story":"","ab":{"str":12,"dex":16,"con":14,"int":10,"wis":14,"cha":12},"saves":["str","dex"],"skills":{"Perception":1,"Stealth":1,"Survival":1,"Nature":1,"Animal Handling":1,"Persuasion":1},"joat":false,"pbO":"","ac":15,"acNote":"Studded leather","initMisc":0,"speed":"30 ft","hpMax":28,"hp":28,"tmp":0,"hd":10,"hdUsed":0,"ds":[0,0],"insp":false,"cond":[],"senses":"Darkvision 60 ft","langs":"Common, Elvish, Sylvan","profs":"Light and medium armour, shields. All weapons.","atk":[{"id":"h43","n":"Longbow","ab":"","prof":true,"bonus":7,"dmg":"1d8+3","dab":false,"ty":"piercing","note":"Ranged, 150 ft (600 ft with disadvantage)"},{"id":"h44","n":"Shortsword","ab":"","prof":true,"bonus":5,"dmg":"1d6+3","dab":false,"ty":"piercing","note":"Melee, reach 5 ft"},{"id":"h45","n":"Hunter’s Mark","ab":"none","prof":true,"bonus":0,"dmg":"1d6","dab":false,"ty":"extra","note":"Add to every hit on your marked target."},{"id":"h46","n":"Colossus Slayer","ab":"none","prof":true,"bonus":0,"dmg":"1d8","dab":false,"ty":"extra","note":"Once per turn, against a creature that’s already hurt."}],"cast":{"type":"half","ab":"wis","slots":[3,0,0,0,0,0,0,0,0],"used":[0,0,0,0,0,0,0,0,0]},"spells":[{"id":"h47","n":"Hunter’s Mark","l":1,"prep":true,"t":"Bonus action","r":"90 ft","c":true,"rit":false,"d":"Mark a creature for an hour: +1d6 damage on every weapon hit against it, and advantage to find it. If it drops, move the mark with a bonus action."},{"id":"h48","n":"Cure Wounds","l":1,"prep":true,"t":"Action","r":"Touch","c":false,"rit":false,"d":"A creature regains 1d8 + 2 hit points."},{"id":"h49","n":"Fog Cloud","l":1,"prep":true,"t":"Action","r":"120 ft","c":true,"rit":false,"d":"A 20 ft radius sphere of thick fog for up to an hour. Nobody sees in or out."}],"feats":[{"id":"h3y","n":"Local","src":"","d":"You grew up here. Ask the GM what you know about any place or person in Hollowmere.","max":0,"used":0,"rest":""},{"id":"h3z","n":"Favoured Enemy: Undead","src":"","d":"Advantage on checks to track undead and to remember what you know about them.","max":0,"used":0,"rest":""},{"id":"h40","n":"Natural Explorer: Forest","src":"","d":"In forests your group can’t get lost, and you can move stealthily at a normal pace.","max":0,"used":0,"rest":""},{"id":"h41","n":"Fighting Style: Archery","src":"","d":"+2 to ranged attacks. Already included.","max":0,"used":0,"rest":""},{"id":"h42","n":"Fey Ancestry","src":"","d":"Advantage on saves against being charmed, and magic can’t put you to sleep.","max":0,"used":0,"rest":""}],"items":[{"id":"h3s","n":"Longbow and 20 arrows","q":1,"note":""},{"id":"h3t","n":"Shortsword","q":1,"note":""},{"id":"h3u","n":"Studded leather","q":1,"note":""},{"id":"h3v","n":"Antler headdress","q":1,"note":""},{"id":"h3w","n":"Hunting trap","q":1,"note":""},{"id":"h3x","n":"50 ft of rope","q":1,"note":""}],"coins":{"cp":0,"sp":0,"gp":9,"pp":0},"shareHp":true}]</script>
+<script src="lib/htm-preact.js?v=e04af92aa7"></script>
+<script src="lib/nacl.min.js?v=e04af92aa7"></script>
+<script src="lib/firebase-app-compat.js?v=e04af92aa7"></script>
+<script src="lib/firebase-auth-compat.js?v=e04af92aa7"></script>
+<script src="lib/firebase-firestore-compat.js?v=e04af92aa7"></script>
+<script src="config.js?v=e04af92aa7"></script>
+<script src="app.js?v=e04af92aa7"></script>
+<script>if('serviceWorker' in navigator&&location.protocol==='https:'){navigator.serviceWorker.register('sw.js').catch(function(){})}</script>
+</body>
+</html>
