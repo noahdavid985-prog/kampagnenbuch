@@ -51,9 +51,9 @@ const AB=['str','dex','con','int','wis','cha'];
 const ABN={str:'Strength',dex:'Dexterity',con:'Constitution',int:'Intelligence',wis:'Wisdom',cha:'Charisma'};
 const ABS={str:'STR',dex:'DEX',con:'CON',int:'INT',wis:'WIS',cha:'CHA'};
 const SK=[['Acrobatics','dex'],['Animal Handling','wis'],['Arcana','int'],['Athletics','str'],['Deception','cha'],['History','int'],['Insight','wis'],['Intimidation','cha'],['Investigation','int'],['Medicine','wis'],['Nature','int'],['Perception','wis'],['Performance','cha'],['Persuasion','cha'],['Religion','int'],['Sleight of Hand','dex'],['Stealth','dex'],['Survival','wis']];
-const CLASSES={Artificer:{hd:8,sv:['con','int'],ct:'halfup',ca:'int'},Barbarian:{hd:12,sv:['str','con']},Bard:{hd:8,sv:['dex','cha'],ct:'full',ca:'cha'},Cleric:{hd:8,sv:['wis','cha'],ct:'full',ca:'wis'},Druid:{hd:8,sv:['int','wis'],ct:'full',ca:'wis'},Fighter:{hd:10,sv:['str','con']},Monk:{hd:8,sv:['str','dex']},Paladin:{hd:10,sv:['wis','cha'],ct:'half',ca:'cha'},Ranger:{hd:10,sv:['str','dex'],ct:'half',ca:'wis'},Rogue:{hd:8,sv:['dex','int']},Sorcerer:{hd:6,sv:['con','cha'],ct:'full',ca:'cha'},Warlock:{hd:8,sv:['wis','cha'],ct:'pact',ca:'cha'},Wizard:{hd:6,sv:['int','wis'],ct:'full',ca:'int'}};
+const CLASSES={Artificer:{hd:8,sv:['con','int'],ct:'halfup',ca:'int'},Barbarian:{hd:12,sv:['str','con']},Bard:{hd:8,sv:['dex','cha'],ct:'full',ca:'cha'},Cleric:{hd:8,sv:['wis','cha'],ct:'full',ca:'wis'},Druid:{hd:8,sv:['int','wis'],ct:'full',ca:'wis'},Fighter:{hd:10,sv:['str','con']},Monk:{hd:8,sv:['str','dex']},Paladin:{hd:10,sv:['wis','cha'],ct:'halfup',ca:'cha'},Ranger:{hd:10,sv:['str','dex'],ct:'halfup',ca:'wis'},Rogue:{hd:8,sv:['dex','int']},Sorcerer:{hd:6,sv:['con','cha'],ct:'full',ca:'cha'},Warlock:{hd:8,sv:['wis','cha'],ct:'pact',ca:'cha'},Wizard:{hd:6,sv:['int','wis'],ct:'full',ca:'int'}};
 const FULL=[[2],[3],[4,2],[4,3],[4,3,2],[4,3,3],[4,3,3,1],[4,3,3,2],[4,3,3,3,1],[4,3,3,3,2],[4,3,3,3,2,1],[4,3,3,3,2,1],[4,3,3,3,2,1,1],[4,3,3,3,2,1,1],[4,3,3,3,2,1,1,1],[4,3,3,3,2,1,1,1],[4,3,3,3,2,1,1,1,1],[4,3,3,3,3,1,1,1,1],[4,3,3,3,3,2,1,1,1],[4,3,3,3,3,2,2,1,1]];
-const CASTER={'':'Kein Caster / von Hand','full':'Full Caster','half':'Half Caster (Paladin, Ranger)','halfup':'Half Caster (Artificer)','pact':'Pact Magic (Warlock)'};
+const CASTER={'':'Kein Caster / von Hand','full':'Full Caster','halfup':'Half Caster (Paladin, Ranger, Artificer)','half':'Half Caster, Regeln von 2014 (ab Level 2)','pact':'Pact Magic (Warlock)'};
 function slotsFor(type,lvl){
   lvl=clamp(Math.round(num(lvl))||1,1,20);let a=[];
   if(type==='full')a=FULL[lvl-1];
@@ -446,13 +446,14 @@ function NewChar(){
     const s=blankSheet();Object.assign(s,{name:d.name.trim(),cls:d.cls.trim(),lvl:clamp(Math.round(num(d.lvl))||1,1,20),race:d.race.trim(),bg:d.bg.trim(),ab:Object.assign({},d.ab)});
     fromClass(s);const con=mod(s.ab.con);s.hpMax=Math.max(1,s.hd+con+(s.lvl-1)*(Math.floor(s.hd/2)+1+con));s.hp=s.hpMax;s.ac=10+mod(s.ab.dex);
     createSheet(s)};
+  if(mode==='build')return html`<${Builder} onExit=${()=>setMode('')}/>`;
   if(mode==='tpl')return html`<button class="btn quiet" onClick=${()=>setMode('')}><${Ic} n="back"/>Zurück</button>
     <h1 class="h1" style="margin-top:.8rem">Held vom Laternenfest</h1>
     <p class="lead">Die acht Helden aus der Nacht der gestohlenen Schatten, so wie sie auf Level 3 waren. Du übernimmst alle Werte und kannst danach alles ändern.</p>
     <div class="pick-grid">${HEROES.map(h=>html`<button key=${h.tpl} class="pick" onClick=${()=>createSheet(h)}><b>${h.name}</b><span class="soft">${h.race} ${h.cls}, ${h.sub}</span><span class="sm">${h.plays}</span></button>`)}</div>`;
   if(mode==='new')return html`<button class="btn quiet" onClick=${()=>setMode('')}><${Ic} n="back"/>Zurück</button>
-    <h1 class="h1" style="margin-top:.8rem">Neuer Charakter</h1>
-    <p class="lead">Die Grundlagen reichen für den Anfang. Angriffe, Spells, Features und Ausrüstung trägst du gleich danach im Bogen ein.</p>
+    <h1 class="h1" style="margin-top:.8rem">Frei eintragen</h1>
+    <p class="lead">Für höhere Level oder andere Regeln: Die Grundlagen reichen für den Anfang. Angriffe, Spells, Features und Ausrüstung trägst du gleich danach im Bogen ein.</p>
     <form class="stack" style="max-width:46rem" onSubmit=${make}>
       <div class="fg">
         <${F} l="Name"><${In} id="nc-name" v=${d.name} on=${v=>up({name:v})}/><//>
@@ -469,12 +470,16 @@ function NewChar(){
       ${CLASSES[d.cls]?html`<p class="hint">Für ${d.cls} trage ich Hit Die (d${CLASSES[d.cls].hd}), Saving Throws${CLASSES[d.cls].ct?' und Spell Slots':''} gleich mit ein.</p>`:null}
       <div><button class="btn solid" type="submit" disabled=${!d.name.trim()}>Charakter anlegen</button></div>
     </form>`;
+  const dr=hasDraft()?normDraft(LS.get(draftKey(),null)):null;
   return html`<h1 class="h1">Dein Charakter</h1>
     <p class="lead">Hier baust du deinen Helden und führst ihn durch die Kampagne. Gewürfelt wird am Tisch, der Bogen rechnet dir die Boni aus. Was du einträgst, wird automatisch gespeichert.</p>
-    <div class="pick-grid" style="max-width:44rem">
-      <button class="pick" onClick=${()=>setMode('new')}><b>Neu bauen</b><span class="sm">Name, Class, Level und Ability Scores eintragen, dann den Bogen Stück für Stück füllen.</span></button>
+    <div class="pick-grid" style="max-width:56rem">
+      ${dr?html`<button class="pick lead-pick" id="nc-resume" onClick=${()=>setMode('build')}><b>Weiterbauen</b><span class="soft">${[dr.name.trim(),dr.cls,raceName(dr)].filter(Boolean).join(' · ')||'Dein Entwurf'}</span><span class="sm">Schritt ${dr.step+1} von ${BSTEPS.length}: ${BSTEPS[dr.step][1]}. Dein Entwurf ist in diesem Browser gespeichert.</span></button>`
+        :html`<button class="pick lead-pick" id="nc-build" onClick=${()=>setMode('build')}><b>Schritt für Schritt bauen</b><span class="sm">Wie bei D&D Beyond: Klasse, Herkunft, Spezies, Attribute, Skills, Spells und Ausrüstung, jeweils mit Erklärung. Regeln von 2024, Level 1.</span></button>`}
       <button class="pick" onClick=${()=>setMode('tpl')}><b>Held vom Laternenfest</b><span class="sm">Mit Brannoc, Ida, Wren oder einem der anderen fünf weiterspielen. Alle Werte sind schon eingetragen.</span></button>
-    </div>`}
+      <button class="pick" onClick=${()=>setMode('new')}><b>Frei eintragen</b><span class="sm">Für höhere Level oder andere Regeln: Grunddaten eintragen und den Rest im Bogen selbst ausfüllen.</span></button>
+    </div>
+    ${dr?html`<p class="sm" style="margin-top:.8rem"><${Confirm} label="Entwurf verwerfen und neu anfangen" cls="linkbtn" ask="Der Entwurf wird gelöscht." yes="Neu anfangen" onYes=${()=>{LS.set(draftKey(),null);setMode('build')}}/></p>`:null}`}
 
 function HpCtl({set}){
   const [n,setN]=useState('');
@@ -669,6 +674,827 @@ function Sheet({s,uid,edit,ro,set}){
 function SheetTab(){
   if(!S.sheet)return html`<${NewChar}/>`;
   return html`<${Sheet} s=${S.sheet} uid=${S.uid} edit=${S.ui.edit} set=${touchSheet}/>`}
+
+/* ================= rules data for the guided builder: 2024 Player's Handbook, level 1 =================
+   Rule names stay English (as on D&D Beyond and in the book); every explanation is a short German summary. */
+
+/* weapons: dice, damage type, category s(imple)/m(artial), r(anged)?, properties, mastery */
+const WEAPONS={
+  'Club':['1d4','bludgeoning','s',0,'Light','Slow'],'Dagger':['1d4','piercing','s',0,'Finesse, Light, Thrown (20/60)','Nick'],
+  'Greatclub':['1d8','bludgeoning','s',0,'Two-Handed','Push'],'Handaxe':['1d6','slashing','s',0,'Light, Thrown (20/60)','Vex'],
+  'Javelin':['1d6','piercing','s',0,'Thrown (30/120)','Slow'],'Light Hammer':['1d4','bludgeoning','s',0,'Light, Thrown (20/60)','Nick'],
+  'Mace':['1d6','bludgeoning','s',0,'','Sap'],'Quarterstaff':['1d6','bludgeoning','s',0,'Versatile (1d8)','Topple'],
+  'Sickle':['1d4','slashing','s',0,'Light','Nick'],'Spear':['1d6','piercing','s',0,'Thrown (20/60), Versatile (1d8)','Sap'],
+  'Dart':['1d4','piercing','s',1,'Finesse, Thrown (20/60)','Vex'],'Light Crossbow':['1d8','piercing','s',1,'Ammunition (80/320), Loading, Two-Handed','Slow'],
+  'Shortbow':['1d6','piercing','s',1,'Ammunition (80/320), Two-Handed','Vex'],'Sling':['1d4','bludgeoning','s',1,'Ammunition (30/120)','Slow'],
+  'Battleaxe':['1d8','slashing','m',0,'Versatile (1d10)','Topple'],'Flail':['1d8','bludgeoning','m',0,'','Sap'],
+  'Glaive':['1d10','slashing','m',0,'Heavy, Reach, Two-Handed','Graze'],'Greataxe':['1d12','slashing','m',0,'Heavy, Two-Handed','Cleave'],
+  'Greatsword':['2d6','slashing','m',0,'Heavy, Two-Handed','Graze'],'Halberd':['1d10','slashing','m',0,'Heavy, Reach, Two-Handed','Cleave'],
+  'Lance':['1d10','piercing','m',0,'Heavy, Reach, Two-Handed (unless mounted)','Topple'],'Longsword':['1d8','slashing','m',0,'Versatile (1d10)','Sap'],
+  'Maul':['2d6','bludgeoning','m',0,'Heavy, Two-Handed','Topple'],'Morningstar':['1d8','piercing','m',0,'','Sap'],
+  'Pike':['1d10','piercing','m',0,'Heavy, Reach, Two-Handed','Push'],'Rapier':['1d8','piercing','m',0,'Finesse','Vex'],
+  'Scimitar':['1d6','slashing','m',0,'Finesse, Light','Nick'],'Shortsword':['1d6','piercing','m',0,'Finesse, Light','Vex'],
+  'Trident':['1d8','piercing','m',0,'Thrown (20/60), Versatile (1d10)','Topple'],'Warhammer':['1d8','bludgeoning','m',0,'Versatile (1d10)','Push'],
+  'War Pick':['1d8','piercing','m',0,'Versatile (1d10)','Sap'],'Whip':['1d4','slashing','m',0,'Finesse, Reach','Slow'],
+  'Blowgun':['1','piercing','m',1,'Ammunition (25/100), Loading','Vex'],'Hand Crossbow':['1d6','piercing','m',1,'Ammunition (30/120), Light, Loading','Vex'],
+  'Heavy Crossbow':['1d10','piercing','m',1,'Ammunition (100/400), Heavy, Loading, Two-Handed','Push'],'Longbow':['1d8','piercing','m',1,'Ammunition (150/600), Heavy, Two-Handed','Slow'],
+  'Musket':['1d12','piercing','m',1,'Ammunition (40/120), Loading, Two-Handed','Slow'],'Pistol':['1d10','piercing','m',1,'Ammunition (30/90), Loading','Vex']};
+const MASTERY={
+  Cleave:'Triffst du, darfst du eine zweite Kreatur direkt daneben angreifen (einmal pro Zug, ohne Attributsbonus auf den Schaden).',
+  Graze:'Verfehlst du, macht das Ziel trotzdem Schaden in Höhe deines Attributsmodifikators.',
+  Nick:'Der Extra-Angriff mit der zweiten leichten Waffe kostet keine Bonusaktion mehr, sondern gehört zur Attack-Aktion.',
+  Push:'Triffst du, schiebst du das Ziel (höchstens Large) bis zu 10 ft von dir weg.',
+  Sap:'Triffst du, hat das Ziel bei seinem nächsten Angriff Disadvantage.',
+  Slow:'Triffst du und machst Schaden, sinkt die Speed des Ziels bis zu deinem nächsten Zug um 10 ft.',
+  Topple:'Triffst du, macht das Ziel einen CON Save oder liegt Prone.',
+  Vex:'Triffst du und machst Schaden, hast du beim nächsten Angriff gegen dieses Ziel Advantage.'};
+const isLight=w=>/Light/.test(WEAPONS[w][4]),isFinesse=w=>/Finesse/.test(WEAPONS[w][4]);
+
+/* armor: base AC, how much DEX counts (99 = all, 2 = at most +2, 0 = none), training needed */
+const ARMOR={'Padded Armor':[11,99,'light'],'Leather Armor':[11,99,'light'],'Studded Leather Armor':[12,99,'light'],
+  'Hide Armor':[12,2,'medium'],'Chain Shirt':[13,2,'medium'],'Scale Mail':[14,2,'medium'],'Breastplate':[14,2,'medium'],'Half Plate Armor':[15,2,'medium'],
+  'Ring Mail':[14,0,'heavy'],'Chain Mail':[16,0,'heavy'],'Splint Armor':[17,0,'heavy'],'Plate Armor':[18,0,'heavy']};
+
+const PACKS={
+  "Burglar's Pack":'Backpack, Ball Bearings, Bell, 10 Candles, Crowbar, Hooded Lantern, 7 Oil, 5 Tage Rationen, Rope, Tinderbox, Waterskin',
+  "Dungeoneer's Pack":'Backpack, Caltrops, Crowbar, 2 Oil, 10 Tage Rationen, Rope, Tinderbox, 10 Torches, Waterskin',
+  "Entertainer's Pack":'Backpack, Bedroll, Bell, Bullseye Lantern, 3 Costumes, Mirror, 8 Oil, 9 Tage Rationen, Tinderbox, Waterskin',
+  "Explorer's Pack":'Backpack, Bedroll, 2 Oil, 10 Tage Rationen, Rope, Tinderbox, 10 Torches, Waterskin',
+  "Priest's Pack":'Backpack, Blanket, Holy Water, Lamp, 7 Tage Rationen, Robe, Tinderbox',
+  "Scholar's Pack":'Backpack, Book, Ink, Ink Pen, Lamp, 10 Oil, 10 Parchment, Tinderbox'};
+
+const TOOLS={
+  artisan:["Alchemist's Supplies","Brewer's Supplies","Calligrapher's Supplies","Carpenter's Tools","Cartographer's Tools","Cobbler's Tools","Cook's Utensils","Glassblower's Tools","Jeweler's Tools","Leatherworker's Tools","Mason's Tools","Painter's Supplies","Potter's Tools","Smith's Tools","Tinker's Tools","Weaver's Tools","Woodcarver's Tools"],
+  music:['Bagpipes','Drum','Dulcimer','Flute','Horn','Lute','Lyre','Pan Flute','Shawm','Viol'],
+  gaming:['Dice','Dragonchess','Playing Cards','Three-Dragon Ante']};
+const LANGS=['Common Sign Language','Draconic','Dwarvish','Elvish','Giant','Gnomish','Goblin','Halfling','Orc'];
+const ALIGN=['Lawful Good','Neutral Good','Chaotic Good','Lawful Neutral','Neutral','Chaotic Neutral','Lawful Evil','Neutral Evil','Chaotic Evil','Unaligned'];
+const SKILL_DE={'Acrobatics':'Akrobatik','Animal Handling':'Umgang mit Tieren','Arcana':'Arkane Kunde','Athletics':'Athletik','Deception':'Täuschen','History':'Geschichte','Insight':'Motiv erkennen','Intimidation':'Einschüchtern','Investigation':'Nachforschungen','Medicine':'Heilkunde','Nature':'Naturkunde','Perception':'Wahrnehmung','Performance':'Auftreten','Persuasion':'Überzeugen','Religion':'Religion','Sleight of Hand':'Fingerfertigkeit','Stealth':'Heimlichkeit','Survival':'Überleben'};
+const AB_DE={str:'Stärke',dex:'Geschicklichkeit',con:'Konstitution',int:'Intelligenz',wis:'Weisheit',cha:'Charisma'};
+const ALLSKILLS=SK.map(x=>x[0]);
+
+/* origin feats */
+const FEATS={
+  'Alert':{d:'Du addierst deinen Proficiency Bonus zur Initiative. Direkt nach dem Initiative-Wurf darfst du deine Initiative mit einem willigen Verbündeten tauschen.'},
+  'Crafter':{d:'Proficiency mit drei Artisan\'s Tools deiner Wahl. Nichtmagische Gegenstände kaufst du 20 % günstiger, und während einer Long Rest kannst du einfache Ausrüstung herstellen.',pick:'crafter'},
+  'Healer':{d:'Mit einem Healer\'s Kit kannst du als Action einen Verbündeten versorgen: Er gibt einen Hit Die aus und heilt den Wurf plus deinen Proficiency Bonus. Würfelst du beim Heilen eine 1, darfst du neu würfeln.'},
+  'Lucky':{d:'Du hast so viele Glückspunkte wie dein Proficiency Bonus. Für einen Punkt bekommst du Advantage auf einen d20-Wurf oder gibst einem Angriff gegen dich Disadvantage. Nach einer Long Rest sind alle wieder da.',uses:'pb'},
+  'Magic Initiate':{d:'Du lernst zwei Cantrips und einen Spell des 1. Grades aus der Liste von Cleric, Druid oder Wizard. Den Spell kannst du einmal pro Long Rest ohne Slot wirken, mit Slots auch öfter.',pick:'magic'},
+  'Musician':{d:'Proficiency mit drei Musikinstrumenten. Nach einer Short oder Long Rest kannst du mit einem Lied so vielen Verbündeten Heroic Inspiration geben, wie dein Proficiency Bonus beträgt.',pick:'musician'},
+  'Savage Attacker':{d:'Einmal pro Zug darfst du die Schadenswürfel eines Waffentreffers zweimal würfeln und das bessere Ergebnis nehmen.'},
+  'Skilled':{d:'Proficiency in drei Skills oder Tools deiner Wahl, beliebig gemischt.',pick:'skilled'},
+  'Tavern Brawler':{d:'Dein Unarmed Strike macht 1d4 + STR. Einsen beim Schaden würfelst du neu, du kannst mit improvisierten Waffen umgehen und einmal pro Zug ein Ziel 5 ft wegstoßen.'},
+  'Tough':{d:'Dein Hit-Point-Maximum steigt um 2 pro Level, also schon auf Level 1 um 2.'}};
+const FIGHTING_STYLES={
+  'Archery':'+2 auf Angriffswürfe mit Fernkampfwaffen.','Blind Fighting':'Du hast Blindsight 10 ft und siehst dort auch Unsichtbares.',
+  'Defense':'+1 AC, solange du Rüstung trägst.','Dueling':'+2 Schaden mit einer einhändigen Nahkampfwaffe, wenn du keine zweite Waffe führst.',
+  'Great Weapon Fighting':'Bei Zweihand- und Versatile-Waffen zählen gewürfelte 1en und 2en beim Schaden als 3.',
+  'Interception':'Als Reaction verringerst du den Schaden an einem Verbündeten neben dir um 1d10 + Proficiency Bonus (mit Schild oder Waffe in der Hand).',
+  'Protection':'Als Reaction gibst du einem Angriff gegen einen Verbündeten neben dir Disadvantage (mit Schild).',
+  'Thrown Weapon Fighting':'Wurfwaffen ziehst du als Teil des Angriffs, und sie machen +2 Schaden.',
+  'Two-Weapon Fighting':'Beim Extra-Angriff mit der zweiten leichten Waffe addierst du deinen Attributsmodifikator zum Schaden.',
+  'Unarmed Fighting':'Dein Unarmed Strike macht 1d6 + STR, ohne Waffe und Schild 1d8. Wen du gepackt hältst, nimmt zu Beginn deines Zugs 1d4 Schaden.'};
+const INVOCATIONS={
+  'Armor of Shadows':'Du kannst Mage Armor auf dich selbst wirken, so oft du willst, ohne Slot.',
+  'Eldritch Mind':'Advantage auf Constitution Saves, um Concentration zu halten.',
+  'Pact of the Blade':'Du beschwörst eine Paktwaffe, mit der du proficient bist und für die du Charisma statt Stärke nutzen kannst.',
+  'Pact of the Chain':'Du lernst Find Familiar und rufst einen besonderen Vertrauten, etwa einen Kobold, ein Quasit oder eine Schlange.',
+  'Pact of the Tome':'Ein Buch der Schatten gibt dir drei zusätzliche Cantrips und zwei Ritual-Spells des 1. Grades von beliebigen Listen.'};
+
+/* classes */
+const C24={
+  Barbarian:{hd:12,prim:'str',sv:['str','con'],tag:'Wilder Nahkämpfer, der vor Wut kaum umzuwerfen ist.',
+    d:'Barbaren stürzen sich ins Getümmel und lassen ihre Wut für sich arbeiten. Im Rage teilen sie mehr Schaden aus und stecken Hiebe viel besser weg.',
+    play:'Einfach zu spielen: nach vorn, Rage an, kräftig zuschlagen.',skills:[2,['Animal Handling','Athletics','Intimidation','Nature','Perception','Survival']],
+    armor:'Light, Medium, Shields',weapons:'Simple, Martial',w:['s','m'],at:['light','medium','shield'],mastery:2,
+    eq:{A:{items:[['Greataxe',1],['Handaxe',4],["Explorer's Pack",1]],gp:15},B:{items:[],gp:75}},
+    f:[['Rage','Bonusaktion, hält bis zu 10 Minuten: +2 Schaden mit Stärke-Angriffen, Advantage auf Stärke-Checks und -Saves, nur halber Schaden durch Hieb-, Stich- und Wuchtwaffen. Keine Spells.',2,'long'],
+      ['Unarmored Defense','Ohne Rüstung ist deine AC 10 + DEX + CON. Ein Schild ist erlaubt.']],
+    unarmored:'con'},
+  Bard:{hd:8,prim:'cha',sv:['dex','cha'],tag:'Musiker und Alleskönner, der die Gruppe besser macht.',
+    d:'Barden verweben Musik, Worte und Magie. Sie heilen, verzaubern, lenken ab und machen ihre Freunde mit Bardic Inspiration besser.',
+    play:'Vielseitig: stark in Gesprächen, nützlich in jeder Lage.',skills:[3,ALLSKILLS],
+    armor:'Light',weapons:'Simple',w:['s'],at:['light'],tools:{music:3},
+    eq:{A:{items:[['Leather Armor',1],['Dagger',2],['Musikinstrument (siehe Tools)',1],["Entertainer's Pack",1]],gp:19},B:{items:[],gp:90}},
+    f:[['Bardic Inspiration','Bonusaktion: Ein Verbündeter in 60 ft bekommt einen d6. Innerhalb einer Stunde darf er ihn nach einem missglückten d20-Wurf dazuzählen. So oft wie dein CHA-Modifikator (mindestens 1).','cha','long'],
+      ['Spellcasting','Du wirkst Bard-Spells mit Charisma.']],
+    sc:{ab:'cha',type:'full',cantrips:2,prep:4}},
+  Cleric:{hd:8,prim:'wis',sv:['wis','cha'],tag:'Diener eines Gottes, Heiler und Beschützer.',
+    d:'Kleriker tragen die Macht ihrer Gottheit in die Welt. Sie heilen, segnen und schützen, und mit Rüstung und Schild halten sie selbst an vorderster Front stand.',
+    play:'Gut für Einsteiger: robust, hilfreich, viele nützliche Spells.',skills:[2,['History','Insight','Medicine','Persuasion','Religion']],
+    armor:'Light, Medium, Shields',weapons:'Simple',w:['s'],at:['light','medium','shield'],
+    eq:{A:{items:[['Chain Shirt',1],['Shield',1],['Mace',1],['Holy Symbol',1],["Priest's Pack",1]],gp:7},B:{items:[],gp:110}},
+    f:[['Spellcasting','Du wirkst Cleric-Spells mit Weisheit. Nach jeder Long Rest wählst du neu, welche Spells du vorbereitet hast.']],
+    sc:{ab:'wis',type:'full',cantrips:3,prep:4},
+    order:{Protector:'Training mit Heavy Armor und Martial Weapons: du stehst vorn.',Thaumaturge:'Ein zusätzlicher Cantrip und dein WIS-Modifikator (mindestens +1) zusätzlich auf Arcana- und Religion-Checks.'}},
+  Druid:{hd:8,prim:'wis',sv:['int','wis'],tag:'Hüter der Natur mit Pflanzen-, Tier- und Wettermagie.',
+    d:'Druiden schöpfen Magie aus der Natur. Sie rufen Ranken und Blitze, heilen und reden mit Tieren. Ab Level 2 verwandeln sie sich selbst in Tiere.',
+    play:'Vielseitige Magie, etwas mehr Planung.',skills:[2,['Arcana','Animal Handling','Insight','Medicine','Nature','Perception','Religion','Survival']],
+    armor:'Light, Medium (keine Metallrüstung), Shields',weapons:'Simple',w:['s'],at:['light','medium','shield'],fixedTools:['Herbalism Kit'],
+    eq:{A:{items:[['Leather Armor',1],['Shield',1],['Sickle',1],['Quarterstaff',1],["Explorer's Pack",1],['Herbalism Kit',1]],gp:9},B:{items:[],gp:50}},
+    f:[['Spellcasting','Du wirkst Druid-Spells mit Weisheit. Nach jeder Long Rest wählst du neu, welche Spells du vorbereitet hast.'],['Druidic','Du kennst die Geheimsprache der Druiden und hast Speak with Animals immer vorbereitet.']],
+    sc:{ab:'wis',type:'full',cantrips:2,prep:4},extraLang:['Druidic'],
+    order:{Magician:'Ein zusätzlicher Cantrip und dein WIS-Modifikator (mindestens +1) zusätzlich auf Arcana- und Nature-Checks.',Warden:'Training mit Martial Weapons und Medium Armor: du kämpfst auch mit der Waffe.'}},
+  Fighter:{hd:10,prim:'str',sv:['str','con'],tag:'Meister aller Waffen und Rüstungen.',
+    d:'Kämpfer beherrschen jede Waffe und jede Rüstung. Sie halten durch, wo andere fallen, und holen mit Action Surge (ab Level 2) im richtigen Moment alles heraus.',
+    play:'Am einfachsten zu spielen und sehr robust.',skills:[2,['Acrobatics','Animal Handling','Athletics','History','Insight','Intimidation','Persuasion','Perception','Survival']],
+    armor:'Light, Medium, Heavy, Shields',weapons:'Simple, Martial',w:['s','m'],at:['light','medium','heavy','shield'],mastery:3,
+    eq:{A:{items:[['Chain Mail',1],['Greatsword',1],['Flail',1],['Javelin',8],["Dungeoneer's Pack",1]],gp:4,label:'Schwer gerüstet, Nahkampf'},
+      B:{items:[['Studded Leather Armor',1],['Scimitar',1],['Shortsword',1],['Longbow',1],['Arrows',20],['Quiver',1],["Dungeoneer's Pack",1]],gp:11,label:'Leicht gerüstet, Bogen und zwei Klingen'},
+      C:{items:[],gp:155}},
+    f:[['Second Wind','Bonusaktion: Du heilst 1d10 + dein Fighter-Level. Nach einer Short Rest bekommst du einen Einsatz zurück, nach einer Long Rest alle.',2,'long']]},
+  Monk:{hd:8,prim:'dex',sv:['str','dex'],tag:'Flinker Kampfkünstler, der mit bloßen Händen kämpft.',
+    d:'Mönche kämpfen mit Fäusten, Füßen und leichten Waffen und sind schneller als alle anderen. Ab Level 2 kommt Focus dazu, mit dem sie Schläge vervielfachen und ausweichen.',
+    play:'Schnell und beweglich, mittlerer Aufwand.',skills:[2,['Acrobatics','Athletics','History','Insight','Religion','Stealth']],
+    armor:'keine',weapons:'Simple, Martial mit der Eigenschaft Light',w:['s','ml'],at:[],tools:{monk:1},
+    eq:{A:{items:[['Spear',1],['Dagger',5],['Artisan\'s Tools oder Musikinstrument (siehe Tools)',1],["Explorer's Pack",1]],gp:11},B:{items:[],gp:50}},
+    f:[['Martial Arts','Unarmed Strikes und Monk-Waffen (Simple und leichte Martial Melee) machen mindestens 1d6 und dürfen DEX statt STR nutzen. Nach der Attack-Aktion darfst du als Bonusaktion einen Unarmed Strike ausführen.'],
+      ['Unarmored Defense','Ohne Rüstung und Schild ist deine AC 10 + DEX + WIS.']],
+    unarmored:'wis',unarmed:'1d6'},
+  Paladin:{hd:10,prim:'str',sv:['wis','cha'],tag:'Heiliger Krieger mit Schwur, Schild und Heilkraft.',
+    d:'Paladine sind durch einen heiligen Schwur gebunden. Sie kämpfen in schwerer Rüstung, heilen mit bloßer Hand und laden ihre Treffer mit göttlicher Macht auf.',
+    play:'Robust und vielseitig, gut für Einsteiger.',skills:[2,['Athletics','Insight','Intimidation','Medicine','Persuasion','Religion']],
+    armor:'Light, Medium, Heavy, Shields',weapons:'Simple, Martial',w:['s','m'],at:['light','medium','heavy','shield'],mastery:2,
+    eq:{A:{items:[['Chain Mail',1],['Shield',1],['Longsword',1],['Javelin',6],['Holy Symbol',1],["Priest's Pack",1]],gp:9},B:{items:[],gp:150}},
+    f:[['Lay on Hands','Ein Vorrat von 5 Hit Points pro Paladin-Level. Mit einer Bonusaktion heilst du durch Berührung beliebig viel daraus, oder du gibst 5 Punkte aus, um das Gift zu entfernen.',5,'long'],
+      ['Spellcasting','Du wirkst Paladin-Spells mit Charisma.']],
+    sc:{ab:'cha',type:'halfup',cantrips:0,prep:2}},
+  Ranger:{hd:10,prim:'dex',sv:['str','dex'],tag:'Fährtenleser und Bogenschütze mit Naturmagie.',
+    d:'Waldläufer kennen die Wildnis wie niemand sonst. Sie jagen mit Bogen oder Klinge, markieren ihre Beute mit Hunter\'s Mark und nutzen kleine Naturzauber.',
+    play:'Fernkampf oder zwei Klingen, mittlerer Aufwand.',skills:[3,['Animal Handling','Athletics','Insight','Investigation','Nature','Perception','Stealth','Survival']],
+    armor:'Light, Medium, Shields',weapons:'Simple, Martial',w:['s','m'],at:['light','medium','shield'],mastery:2,
+    eq:{A:{items:[['Studded Leather Armor',1],['Scimitar',1],['Shortsword',1],['Longbow',1],['Arrows',20],['Quiver',1],['Druidic Focus (Mistelzweig)',1],["Explorer's Pack",1]],gp:7},B:{items:[],gp:150}},
+    f:[['Favored Enemy','Hunter\'s Mark ist immer vorbereitet. Du kannst ihn zweimal pro Long Rest ohne Slot wirken.',2,'long'],['Spellcasting','Du wirkst Ranger-Spells mit Weisheit.']],
+    sc:{ab:'wis',type:'halfup',cantrips:0,prep:2,always:["Hunter's Mark"]}},
+  Rogue:{hd:8,prim:'dex',sv:['dex','int'],tag:'Heimlicher Spezialist für Schlösser, Fallen und gezielte Stiche.',
+    d:'Schurken verlassen sich auf Geschick, List und den richtigen Moment. Mit Sneak Attack machen sie aus einem guten Treffer einen verheerenden.',
+    play:'Einfach im Kampf, glänzt bei Erkundung und Tricks.',skills:[4,['Acrobatics','Athletics','Deception','Insight','Intimidation','Investigation','Perception','Persuasion','Sleight of Hand','Stealth']],
+    armor:'Light',weapons:'Simple, Martial mit Finesse oder Light',w:['s','mfl'],at:['light'],mastery:2,fixedTools:["Thieves' Tools"],
+    eq:{A:{items:[['Leather Armor',1],['Dagger',2],['Shortsword',1],['Shortbow',1],['Arrows',20],['Quiver',1],["Thieves' Tools",1],["Burglar's Pack",1]],gp:8},B:{items:[],gp:100}},
+    f:[['Expertise','In zwei deiner Skills zählt dein Proficiency Bonus doppelt.'],['Sneak Attack','Einmal pro Zug +1d6 Schaden, wenn du mit einer Finesse- oder Fernkampfwaffe triffst und Advantage hast oder ein Verbündeter neben dem Ziel steht.'],
+      ['Thieves\' Cant','Du kennst die Geheimsprache der Diebe und eine weitere Sprache.']],
+    extraLang:["Thieves' Cant"],extraLangPick:1,expertise:2},
+  Sorcerer:{hd:6,prim:'cha',sv:['con','cha'],tag:'Geborener Zauberer mit Magie im Blut.',
+    d:'Zauberer tragen die Magie in sich, durch Abstammung oder ein seltsames Ereignis. Sie haben weniger Spells als ein Wizard, wirken sie aber mit roher Kraft.',
+    play:'Starke Angriffszauber, wenig Hit Points.',skills:[2,['Arcana','Deception','Insight','Intimidation','Persuasion','Religion']],
+    armor:'keine',weapons:'Simple',w:['s'],at:[],
+    eq:{A:{items:[['Spear',1],['Dagger',2],['Arcane Focus (Kristall)',1],["Dungeoneer's Pack",1]],gp:28},B:{items:[],gp:50}},
+    f:[['Innate Sorcery','Bonusaktion, 1 Minute lang: Deine Spell Save DC steigt um 1, und du hast Advantage auf Angriffe mit Sorcerer-Spells.',2,'long'],['Spellcasting','Du wirkst Sorcerer-Spells mit Charisma.']],
+    sc:{ab:'cha',type:'full',cantrips:4,prep:2}},
+  Warlock:{hd:8,prim:'cha',sv:['wis','cha'],tag:'Magie durch einen Pakt mit einem mächtigen Wesen.',
+    d:'Hexenmeister haben einen Pakt mit einem übernatürlichen Wesen geschlossen. Sie haben wenige Spell Slots, die aber nach jeder Short Rest zurückkommen, und Eldritch Invocations, die ihre Magie formen.',
+    play:'Mittlerer Aufwand, starke Cantrips.',skills:[2,['Arcana','Deception','History','Intimidation','Investigation','Nature','Religion']],
+    armor:'Light',weapons:'Simple',w:['s'],at:['light'],
+    eq:{A:{items:[['Leather Armor',1],['Sickle',1],['Dagger',2],['Arcane Focus (Kugel)',1],['Book (okkultes Wissen)',1],["Scholar's Pack",1]],gp:15},B:{items:[],gp:100}},
+    f:[['Pact Magic','Du wirkst Warlock-Spells mit Charisma. Deine Spell Slots kommen schon nach einer Short Rest zurück.']],
+    sc:{ab:'cha',type:'pact',cantrips:2,prep:2}},
+  Wizard:{hd:6,prim:'int',sv:['int','wis'],tag:'Gelehrter Magier mit dem größten Zauberbuch.',
+    d:'Magier haben Zauberei studiert wie andere eine Wissenschaft. Ihr Zauberbuch wächst mit jedem Abenteuer, und für fast jedes Problem gibt es einen passenden Spell.',
+    play:'Die meisten Optionen, braucht etwas Planung.',skills:[2,['Arcana','History','Insight','Investigation','Medicine','Nature','Religion']],
+    armor:'keine',weapons:'Simple',w:['s'],at:[],
+    eq:{A:{items:[['Dagger',2],['Quarterstaff',1],['Robe',1],['Spellbook',1],["Scholar's Pack",1]],gp:5},B:{items:[],gp:55}},
+    f:[['Spellcasting','Du wirkst Wizard-Spells mit Intelligenz. Dein Zauberbuch enthält sechs Spells des 1. Grades, vier davon hast du jeweils vorbereitet.'],
+      ['Ritual Adept','Ritual-Spells aus deinem Zauberbuch kannst du als Ritual wirken, ohne sie vorzubereiten.'],
+      ['Arcane Recovery','Einmal am Tag holst du nach einer Short Rest verbrauchte Spell Slots zurück, zusammen höchstens halb so viele Grade wie dein Wizard-Level (aufgerundet).',1,'long']],
+    sc:{ab:'int',type:'full',cantrips:3,prep:4,book:6}}};
+
+/* species */
+const SPECIES={
+  Aasimar:{size:['Medium','Small'],speed:30,dv:60,tag:'Mit himmlischem Funken, heilende Hände.',
+    d:'Aasimar tragen das Licht der Oberen Ebenen in sich. Manche sehen fast aus wie Menschen, andere haben leuchtende Augen oder einen Schimmer auf der Haut.',
+    t:[['Celestial Resistance','Resistance gegen Necrotic und Radiant.'],['Darkvision','60 ft.'],['Healing Hands','Magic-Aktion: Du heilst eine berührte Kreatur um so viele d4, wie dein Proficiency Bonus beträgt.',1,'long'],['Light Bearer','Du kennst den Cantrip Light (Charisma).'],['Celestial Revelation','Ab Level 3: himmlische Verwandlung mit Flügeln, Strahlen oder Schrecken.']],cantrip:['Light','cha']},
+  Dragonborn:{size:['Medium'],speed:30,dv:60,tag:'Drachenblut mit Odemwaffe.',
+    d:'Drachenblütige stammen von Drachen ab, sind stolz, groß und geschuppt. Ihre Abstammung bestimmt die Art ihres Odems und ihre Resistenz.',
+    t:[['Draconic Ancestry','Deine Drachenart bestimmt Schadensart von Odem und Resistenz.'],['Breath Weapon','Ersetzt einen Angriff: 15-ft-Kegel oder 30-ft-Linie, DEX Save (DC 8 + CON + Proficiency Bonus), 1d10 Schaden, halb bei Erfolg.','pb','long'],['Damage Resistance','Resistance gegen die Schadensart deiner Abstammung.'],['Darkvision','60 ft.'],['Draconic Flight','Ab Level 5: für kurze Zeit Flügel.']],
+    choose:{key:'ancestry',label:'Drachenart',opts:{Black:'Acid',Blue:'Lightning',Brass:'Fire',Bronze:'Lightning',Copper:'Acid',Gold:'Fire',Green:'Poison',Red:'Fire',Silver:'Cold',White:'Cold'}}},
+  Dwarf:{size:['Medium'],speed:30,dv:120,tag:'Zäh, standhaft, spürt Stein.',
+    d:'Zwerge stammen aus den Tiefen der Erde. Sie sind zäh, vertragen Gift und spüren durch den Stein, was sich um sie herum bewegt.',
+    t:[['Darkvision','120 ft.'],['Dwarven Resilience','Resistance gegen Poison und Advantage gegen den Zustand Poisoned.'],['Dwarven Toughness','+1 Hit Point pro Level.'],['Stonecunning','Bonusaktion: 10 Minuten Tremorsense 60 ft, solange du auf Stein stehst.','pb','long']],hpPerLevel:1},
+  Elf:{size:['Medium'],speed:30,dv:60,tag:'Feenblut, scharfe Sinne, Trance statt Schlaf.',
+    d:'Elfen sind langlebig und mit dem Feenreich verbunden. Sie schlafen nicht, sondern meditieren, und ihre Linie gibt ihnen eigene Magie.',
+    t:[['Darkvision','60 ft (Drow: 120 ft).'],['Fey Ancestry','Advantage gegen Charmed.'],['Keen Senses','Proficiency in Insight, Perception oder Survival.'],['Trance','Vier Stunden Meditation ersetzen eine Long Rest voll Schlaf.']],keen:['Insight','Perception','Survival'],
+    choose:{key:'lineage',label:'Elfenlinie',opts:{Drow:'Darkvision 120 ft, Cantrip Dancing Lights; ab Level 3 Faerie Fire, ab 5 Darkness.','High Elf':'Cantrip Prestidigitation (nach jeder Long Rest austauschbar); ab Level 3 Detect Magic, ab 5 Misty Step.','Wood Elf':'Speed 35 ft, Cantrip Druidcraft; ab Level 3 Longstrider, ab 5 Pass without Trace.'}}},
+  Gnome:{size:['Small'],speed:30,dv:60,tag:'Klein, schlau, magisch begabt.',
+    d:'Gnome sind kleine, neugierige Tüftler und Geschichtenerzähler. Ihr Verstand ist schwer zu beeinflussen.',
+    t:[['Darkvision','60 ft.'],['Gnomish Cunning','Advantage auf Intelligence-, Wisdom- und Charisma-Saves.']],
+    choose:{key:'lineage',label:'Gnomenlinie',opts:{'Forest Gnome':'Cantrip Minor Illusion; Speak with Animals so oft wie dein Proficiency Bonus pro Long Rest ohne Slot.','Rock Gnome':'Cantrips Mending und Prestidigitation; du baust kleine Uhrwerk-Spielereien.'}}},
+  Goliath:{size:['Medium'],speed:35,dv:0,tag:'Riesenblut, groß und kräftig.',
+    d:'Goliaths stammen von Riesen ab. Sie sind groß, stark und tragen eine Gabe ihrer Riesenvorfahren in sich.',
+    t:[['Giant Ancestry','Eine Gabe deiner Riesenabstammung, so oft wie dein Proficiency Bonus pro Long Rest.','pb','long'],['Large Form','Ab Level 5: kurz zu Large wachsen.'],['Powerful Build','Advantage, um Grappled zu beenden; du trägst wie eine Größe größer.']],
+    choose:{key:'ancestry',label:'Riesengabe',opts:{"Cloud's Jaunt":'Bonusaktion: bis zu 30 ft teleportieren.',"Fire's Burn":'Bei einem Treffer +1d10 Fire.',"Frost's Chill":'Bei einem Treffer +1d6 Cold und Speed −10 ft.',"Hill's Tumble":'Bei einem Treffer: Ziel (höchstens Large) liegt Prone.',"Stone's Endurance":'Reaction: Schaden um 1d12 + CON verringern.',"Storm's Thunder":'Reaction, wenn du Schaden nimmst: Angreifer in 60 ft nimmt 1d8 Thunder.'}}},
+  Halfling:{size:['Small'],speed:30,dv:0,tag:'Klein, mutig und vom Glück begünstigt.',
+    d:'Halblinge sind klein, gesellig und erstaunlich mutig. Das Glück scheint ihnen in letzter Sekunde immer wieder zu helfen.',
+    t:[['Brave','Advantage gegen Frightened.'],['Halfling Nimbleness','Du darfst dich durch den Raum größerer Kreaturen bewegen.'],['Luck','Würfelst du bei einem d20-Wurf eine 1, würfelst du neu.'],['Naturally Stealthy','Du kannst dich hinter größeren Kreaturen verstecken.']]},
+  Human:{size:['Medium','Small'],speed:30,dv:0,tag:'Anpassungsfähig, mit einem Extra-Feat.',
+    d:'Menschen sind die verbreitetsten und vielseitigsten Leute der Welt. Sie bekommen ein zusätzliches Origin Feat und einen Skill.',
+    t:[['Resourceful','Nach jeder Long Rest hast du Heroic Inspiration: einmal einen beliebigen Wurf neu würfeln.'],['Skillful','Proficiency in einem Skill deiner Wahl.'],['Versatile','Ein zusätzliches Origin Feat deiner Wahl.']],skillful:true,versatile:true},
+  Orc:{size:['Medium'],speed:30,dv:120,tag:'Ausdauernd, schnell, kaum kleinzukriegen.',
+    d:'Orks sind kräftig, ausdauernd und kämpfen sich durch, wo andere aufgeben.',
+    t:[['Adrenaline Rush','Bonusaktion: Dash und Temporary Hit Points in Höhe deines Proficiency Bonus.','pb','short'],['Darkvision','120 ft.'],['Relentless Endurance','Fällst du auf 0 Hit Points, bleibst du stattdessen bei 1 stehen.',1,'long']]},
+  Tiefling:{size:['Medium','Small'],speed:30,dv:60,tag:'Höllisches Erbe, Hörner und Magie.',
+    d:'Tieflinge tragen das Erbe der Unteren Ebenen: Hörner, Schwanz, ungewöhnliche Haut. Ihr Erbe gibt ihnen Resistenz und Magie.',
+    t:[['Darkvision','60 ft.'],['Fiendish Legacy','Resistenz und Magie je nach Erbe (siehe Auswahl).'],['Otherworldly Presence','Du kennst den Cantrip Thaumaturgy.']],cantrip:['Thaumaturgy',null],
+    choose:{key:'lineage',label:'Höllisches Erbe',opts:{Abyssal:'Resistance gegen Poison, Cantrip Poison Spray; ab Level 3 Ray of Sickness, ab 5 Hold Person.',Chthonic:'Resistance gegen Necrotic, Cantrip Chill Touch; ab Level 3 False Life, ab 5 Ray of Enfeeblement.',Infernal:'Resistance gegen Fire, Cantrip Fire Bolt; ab Level 3 Hellish Rebuke, ab 5 Darkness.'}}}};
+const LINEAGE_CANTRIP={Drow:'Dancing Lights','High Elf':'Prestidigitation','Wood Elf':'Druidcraft','Forest Gnome':'Minor Illusion','Rock Gnome':'Mending',Abyssal:'Poison Spray',Chthonic:'Chill Touch',Infernal:'Fire Bolt'};
+
+/* backgrounds */
+const BG24={
+  Acolyte:{ab:['int','wis','cha'],sk:['Insight','Religion'],tool:"Calligrapher's Supplies",feat:'Magic Initiate',fl:'Cleric',d:'Du hast in einem Tempel gedient und die Riten deines Glaubens gelernt.',eq:[['Calligrapher\'s Supplies',1],['Book (Gebete)',1],['Holy Symbol',1],['Parchment',10],['Robe',1]],gp:8},
+  Artisan:{ab:['str','dex','int'],sk:['Investigation','Persuasion'],tool:'artisan',feat:'Crafter',d:'Du hast in einer Werkstatt ein Handwerk gelernt und weißt, was gute Arbeit wert ist.',eq:[["Artisan's Tools (deine Wahl)",1],['Pouch',2],["Traveler's Clothes",1]],gp:32},
+  Charlatan:{ab:['dex','con','cha'],sk:['Deception','Sleight of Hand'],tool:'Forgery Kit',feat:'Skilled',d:'Du hast dich mit falschen Namen, gefälschten Papieren und schönen Lügen durchgeschlagen.',eq:[['Forgery Kit',1],['Costume',1],['Fine Clothes',1]],gp:15},
+  Criminal:{ab:['dex','con','int'],sk:['Sleight of Hand','Stealth'],tool:"Thieves' Tools",feat:'Alert',d:'Du hast als Dieb, Schmuggler oder Einbrecher gelebt und kennst die dunklen Gassen.',eq:[['Dagger',2],["Thieves' Tools",1],['Crowbar',1],['Pouch',2],["Traveler's Clothes",1]],gp:16},
+  Entertainer:{ab:['str','dex','cha'],sk:['Acrobatics','Performance'],tool:'music',feat:'Musician',d:'Du bist mit Gauklern, Musikern oder einem Wanderzirkus über Land gezogen.',eq:[['Musikinstrument (deine Wahl)',1],['Costume',2],['Mirror',1],['Perfume',1],["Traveler's Clothes",1]],gp:11},
+  Farmer:{ab:['str','con','wis'],sk:['Animal Handling','Nature'],tool:"Carpenter's Tools",feat:'Tough',d:'Du bist auf dem Land aufgewachsen, hast Felder bestellt und Tiere versorgt.',eq:[['Sickle',1],["Carpenter's Tools",1],["Healer's Kit",1],['Iron Pot',1],['Shovel',1],["Traveler's Clothes",1]],gp:30},
+  Guard:{ab:['str','int','wis'],sk:['Athletics','Perception'],tool:'gaming',feat:'Alert',d:'Du hast Stadtmauern, Tore oder einen Adligen bewacht und gelernt, wachsam zu bleiben.',eq:[['Spear',1],['Light Crossbow',1],['Bolts',20],['Spielset (deine Wahl)',1],['Hooded Lantern',1],['Manacles',1],['Quiver',1],["Traveler's Clothes",1]],gp:12},
+  Guide:{ab:['dex','con','wis'],sk:['Stealth','Survival'],tool:"Cartographer's Tools",feat:'Magic Initiate',fl:'Druid',d:'Du hast Reisende durch die Wildnis geführt und kennst Pfade, die auf keiner Karte stehen.',eq:[['Shortbow',1],['Arrows',20],["Cartographer's Tools",1],['Bedroll',1],['Quiver',1],['Tent',1],["Traveler's Clothes",1]],gp:3},
+  Hermit:{ab:['con','wis','cha'],sk:['Medicine','Religion'],tool:'Herbalism Kit',feat:'Healer',d:'Du hast lange abgeschieden gelebt, in einer Hütte, Höhle oder einem Kloster.',eq:[['Quarterstaff',1],['Herbalism Kit',1],['Bedroll',1],['Book (Philosophie)',1],['Lamp',1],['Oil',3],["Traveler's Clothes",1]],gp:16},
+  Merchant:{ab:['con','int','cha'],sk:['Animal Handling','Persuasion'],tool:"Navigator's Tools",feat:'Lucky',d:'Du hast mit Waren gehandelt, Karawanen begleitet und gelernt, gut zu verhandeln.',eq:[["Navigator's Tools",1],['Pouch',2],["Traveler's Clothes",1]],gp:22},
+  Noble:{ab:['str','int','cha'],sk:['History','Persuasion'],tool:'gaming',feat:'Skilled',d:'Du bist in einer adligen Familie aufgewachsen, mit Titel, Pflichten und Bediensteten.',eq:[['Spielset (deine Wahl)',1],['Fine Clothes',1],['Perfume',1]],gp:29},
+  Sage:{ab:['con','int','wis'],sk:['Arcana','History'],tool:"Calligrapher's Supplies",feat:'Magic Initiate',fl:'Wizard',d:'Du hast Jahre in Bibliotheken und Akademien verbracht und Wissen gesammelt.',eq:[['Quarterstaff',1],["Calligrapher's Supplies",1],['Book (Geschichte)',1],['Parchment',8],['Robe',1]],gp:8},
+  Sailor:{ab:['str','dex','wis'],sk:['Acrobatics','Perception'],tool:"Navigator's Tools",feat:'Tavern Brawler',d:'Du bist zur See gefahren, hast Stürme überstanden und in Hafenkneipen gerauft.',eq:[['Dagger',1],["Navigator's Tools",1],['Rope',1],["Traveler's Clothes",1]],gp:20},
+  Scribe:{ab:['dex','int','wis'],sk:['Investigation','Perception'],tool:"Calligrapher's Supplies",feat:'Skilled',d:'Du hast Bücher abgeschrieben, Urkunden aufgesetzt und gelernt, auf jedes Detail zu achten.',eq:[["Calligrapher's Supplies",1],['Fine Clothes',1],['Lamp',1],['Oil',3],['Parchment',12]],gp:23},
+  Soldier:{ab:['str','dex','con'],sk:['Athletics','Intimidation'],tool:'gaming',feat:'Savage Attacker',d:'Du hast in einer Armee gedient, gedrillt und gekämpft.',eq:[['Spear',1],['Shortbow',1],['Arrows',20],['Spielset (deine Wahl)',1],["Healer's Kit",1],['Quiver',1],["Traveler's Clothes",1]],gp:14},
+  Wayfarer:{ab:['dex','wis','cha'],sk:['Insight','Stealth'],tool:"Thieves' Tools",feat:'Lucky',d:'Du bist auf der Straße aufgewachsen und hast gelernt, mit wenig auszukommen.',eq:[['Dagger',2],["Thieves' Tools",1],['Spielset (deine Wahl)',1],['Bedroll',1],['Pouch',2],["Traveler's Clothes",1]],gp:16}};
+
+/* spells of levels 0 and 1: casting time, range, concentration, ritual, short summary */
+const SP={
+  'Acid Splash':[0,'Action','60 ft',0,0,'Kreaturen in 5 ft Radius machen einen DEX Save, sonst 1d6 Acid.'],
+  'Blade Ward':[0,'Action','Self',1,0,'Bis 1 Minute: Wer dich angreift, zieht 1d4 von seinem Angriffswurf ab.'],
+  'Chill Touch':[0,'Action','Touch',0,0,'Melee Spell Attack, 1d10 Necrotic. Das Ziel kann bis zu deinem nächsten Zug nicht geheilt werden.'],
+  'Dancing Lights':[0,'Action','120 ft',1,0,'Bis zu vier schwebende Lichter, die du bewegen kannst.'],
+  'Druidcraft':[0,'Action','30 ft',0,0,'Kleine Naturwunder: Wetter vorhersagen, Blüte öffnen, Funken, Duft.'],
+  'Eldritch Blast':[0,'Action','120 ft',0,0,'Ranged Spell Attack, 1d10 Force. Ab Level 5 mehrere Strahlen.'],
+  'Elementalism':[0,'Action','30 ft',0,0,'Kleine Elementareffekte: Windstoß, Funken, Nebel, Staub formen.'],
+  'Fire Bolt':[0,'Action','120 ft',0,0,'Ranged Spell Attack, 1d10 Fire. Entzündet brennbare Dinge.'],
+  'Friends':[0,'Action','10 ft',1,0,'Advantage auf Charisma-Checks gegen eine Kreatur. Sie merkt danach, dass du gezaubert hast.'],
+  'Guidance':[0,'Action','Touch',1,0,'Ein Verbündeter bekommt +1d4 auf Checks mit einem Skill deiner Wahl.'],
+  'Light':[0,'Action','Touch',0,0,'Ein Gegenstand leuchtet eine Stunde hell im Umkreis von 20 ft.'],
+  'Mage Hand':[0,'Action','30 ft',0,0,'Eine Geisterhand bewegt Gegenstände bis 10 lb, öffnet Türen, holt Dinge.'],
+  'Mending':[0,'1 Minute','Touch',0,0,'Repariert einen Riss oder Bruch an einem Gegenstand.'],
+  'Message':[0,'Action','120 ft',0,0,'Du flüsterst einer Kreatur eine Nachricht zu, sie kann leise antworten.'],
+  'Mind Sliver':[0,'Action','60 ft',0,0,'INT Save, sonst 1d6 Psychic und −1d4 auf den nächsten Save.'],
+  'Minor Illusion':[0,'Action','30 ft',0,0,'Ein Geräusch oder ein unbewegtes Bild (5-ft-Würfel) für 1 Minute.'],
+  'Poison Spray':[0,'Action','30 ft',0,0,'Ranged Spell Attack, 1d12 Poison.'],
+  'Prestidigitation':[0,'Action','10 ft',0,0,'Harmlose Tricks: Kerze anzünden, reinigen, wärmen, kleines Zeichen.'],
+  'Produce Flame':[0,'Bonus Action','Self',0,0,'Flamme in der Hand als Licht. Geworfen: Ranged Spell Attack 60 ft, 1d8 Fire.'],
+  'Ray of Frost':[0,'Action','60 ft',0,0,'Ranged Spell Attack, 1d8 Cold und Speed −10 ft.'],
+  'Resistance':[0,'Action','Touch',1,0,'Wähle eine Schadensart: Einmal pro Zug sinkt Schaden dieser Art am Ziel um 1d4.'],
+  'Sacred Flame':[0,'Action','60 ft',0,0,'DEX Save, sonst 1d8 Radiant. Deckung hilft nicht.'],
+  'Shillelagh':[0,'Bonus Action','Self',0,0,'Keule oder Kampfstab nutzt dein Zauberattribut und macht 1d8 Schaden.'],
+  'Shocking Grasp':[0,'Action','Touch',0,0,'Melee Spell Attack, 1d8 Lightning. Das Ziel kann keine Opportunity Attacks machen.'],
+  'Sorcerous Burst':[0,'Action','120 ft',0,0,'Ranged Spell Attack, 1d8 einer Element-Schadensart. Jede gewürfelte 8 bringt einen Extra-d8.'],
+  'Spare the Dying':[0,'Action','15 ft',0,0,'Stabilisiert eine Kreatur mit 0 Hit Points.'],
+  'Starry Wisp':[0,'Action','60 ft',0,0,'Ranged Spell Attack, 1d8 Radiant. Das Ziel leuchtet und kann nicht unsichtbar sein.'],
+  'Thaumaturgy':[0,'Action','30 ft',0,0,'Kleine Wunder: donnernde Stimme, flackernde Flammen, Beben, Türen fliegen auf.'],
+  'Thorn Whip':[0,'Action','30 ft',0,0,'Melee Spell Attack, 1d6 Piercing. Zieht das Ziel bis 10 ft zu dir.'],
+  'Thunderclap':[0,'Action','Self',0,0,'Alle in 5 ft machen einen CON Save, sonst 1d6 Thunder.'],
+  'Toll the Dead':[0,'Action','60 ft',0,0,'WIS Save, sonst 1d8 Necrotic, 1d12 wenn das Ziel schon verletzt ist.'],
+  'True Strike':[0,'Action','Self',0,0,'Ein Waffenangriff mit deinem Zauberattribut statt STR oder DEX.'],
+  'Vicious Mockery':[0,'Action','60 ft',0,0,'WIS Save, sonst 1d6 Psychic und Disadvantage beim nächsten Angriff.'],
+  'Word of Radiance':[0,'Action','5 ft',0,0,'Gewählte Kreaturen in 5 ft machen einen CON Save, sonst 1d6 Radiant.'],
+  'Alarm':[1,'1 Minute','30 ft',0,1,'Ein Bereich warnt dich 8 Stunden lang, wenn jemand ihn betritt.'],
+  'Animal Friendship':[1,'Action','30 ft',0,0,'Ein Tier macht einen WIS Save, sonst ist es 24 Stunden Charmed.'],
+  'Armor of Agathys':[1,'Bonus Action','Self',0,0,'5 Temporary Hit Points. Wer dich im Nahkampf trifft, nimmt 5 Cold.'],
+  'Arms of Hadar':[1,'Action','Self',0,0,'Alle in 10 ft machen einen STR Save, sonst 2d6 Necrotic und keine Reactions.'],
+  'Bane':[1,'Action','30 ft',1,0,'Bis zu drei Kreaturen machen einen CHA Save, sonst −1d4 auf Angriffe und Saves.'],
+  'Bless':[1,'Action','30 ft',1,0,'Bis zu drei Verbündete bekommen +1d4 auf Angriffe und Saves.'],
+  'Burning Hands':[1,'Action','Self (15-ft-Kegel)',0,0,'DEX Save, sonst 3d6 Fire, halb bei Erfolg.'],
+  'Charm Person':[1,'Action','30 ft',0,0,'Ein Humanoid macht einen WIS Save, sonst ist er eine Stunde lang freundlich zu dir.'],
+  'Chromatic Orb':[1,'Action','90 ft',0,0,'Ranged Spell Attack, 3d8 einer gewählten Schadensart. Bei doppelten Würfeln springt die Kugel weiter.'],
+  'Color Spray':[1,'Action','Self (15-ft-Kegel)',0,0,'CON Save, sonst Blinded bis zum Ende deines nächsten Zugs.'],
+  'Command':[1,'Action','60 ft',0,0,'WIS Save, sonst befolgt das Ziel ein Wort: Approach, Drop, Flee, Grovel oder Halt.'],
+  'Compelled Duel':[1,'Bonus Action','30 ft',1,0,'WIS Save, sonst hat das Ziel Disadvantage gegen andere und kann sich nicht freiwillig von dir entfernen.'],
+  'Comprehend Languages':[1,'Action','Self',0,1,'Eine Stunde lang verstehst du jede gesprochene und geschriebene Sprache.'],
+  'Create or Destroy Water':[1,'Action','30 ft',0,0,'Erschafft oder vernichtet bis zu 10 Gallonen Wasser.'],
+  'Cure Wounds':[1,'Action','Touch',0,0,'Heilt 2d8 + dein Zaubermodifikator.'],
+  'Detect Evil and Good':[1,'Action','Self',1,0,'Du spürst Aberrationen, Himmlische, Elementare, Feen, Unholde und Untote in 30 ft.'],
+  'Detect Magic':[1,'Action','Self',1,1,'Du spürst Magie in 30 ft und erkennst ihre Schule.'],
+  'Detect Poison and Disease':[1,'Action','Self',1,1,'Du spürst Gifte, giftige Kreaturen und Krankheiten in 30 ft.'],
+  'Disguise Self':[1,'Action','Self',0,0,'Eine Stunde lang siehst du anders aus, auch Kleidung und Ausrüstung.'],
+  'Dissonant Whispers':[1,'Action','60 ft',0,0,'WIS Save, sonst 3d6 Psychic und das Ziel muss vor dir fliehen. Halb bei Erfolg.'],
+  'Divine Favor':[1,'Bonus Action','Self',0,0,'Eine Minute lang machen deine Waffentreffer +1d4 Radiant.'],
+  'Divine Smite':[1,'Bonus Action','Self',0,0,'Direkt nach einem Nahkampftreffer: +2d8 Radiant, gegen Unholde und Untote +1d8 mehr.'],
+  'Ensnaring Strike':[1,'Bonus Action','Self',1,0,'Nach einem Waffentreffer: STR Save, sonst Restrained in Ranken und 1d6 Piercing pro Zug.'],
+  'Entangle':[1,'Action','90 ft',1,0,'Ranken in einem 20-ft-Quadrat: STR Save, sonst Restrained. Schwieriges Gelände.'],
+  'Expeditious Retreat':[1,'Bonus Action','Self',1,0,'Du kannst jede Runde als Bonusaktion Dash nutzen.'],
+  'Faerie Fire':[1,'Action','60 ft',1,0,'Kreaturen in einem 20-ft-Würfel leuchten (DEX Save). Angriffe gegen sie haben Advantage.'],
+  'False Life':[1,'Action','Self',0,0,'Du bekommst 2d4 + 4 Temporary Hit Points.'],
+  'Feather Fall':[1,'Reaction','60 ft',0,0,'Bis zu fünf fallende Kreaturen sinken langsam und nehmen keinen Fallschaden.'],
+  'Find Familiar':[1,'1 Stunde','10 ft',0,1,'Ein Geist in Tiergestalt wird dein Vertrauter, späht für dich und hilft.'],
+  'Floating Disk':[1,'Action','30 ft',0,1,'Eine schwebende Scheibe trägt eine Stunde lang bis zu 500 lb hinter dir her.'],
+  'Fog Cloud':[1,'Action','120 ft',1,0,'Dichter Nebel mit 20 ft Radius, niemand sieht hindurch.'],
+  'Goodberry':[1,'Action','Self',0,0,'Zehn Beeren, jede heilt 1 Hit Point und ersetzt eine Tagesration.'],
+  'Grease':[1,'Action','60 ft',0,0,'Ein 10-ft-Quadrat wird rutschig: DEX Save, sonst Prone. Schwieriges Gelände.'],
+  'Guiding Bolt':[1,'Action','120 ft',0,0,'Ranged Spell Attack, 4d6 Radiant. Der nächste Angriff gegen das Ziel hat Advantage.'],
+  'Hail of Thorns':[1,'Bonus Action','Self',0,0,'Nach einem Fernkampftreffer: Dornen regnen, DEX Save in 5 ft, 1d10 Piercing.'],
+  'Healing Word':[1,'Bonus Action','60 ft',0,0,'Heilt 2d4 + dein Zaubermodifikator aus der Entfernung.'],
+  'Hellish Rebuke':[1,'Reaction','60 ft',0,0,'Wenn dich jemand verletzt: DEX Save, sonst 2d10 Fire, halb bei Erfolg.'],
+  'Heroism':[1,'Action','Touch',1,0,'Das Ziel ist immun gegen Frightened und bekommt jede Runde Temporary Hit Points.'],
+  'Hex':[1,'Bonus Action','90 ft',1,0,'Deine Treffer gegen das Ziel machen +1d6 Necrotic. Es hat Disadvantage auf Checks mit einem Attribut.'],
+  "Hunter's Mark":[1,'Bonus Action','90 ft',1,0,'Deine Waffentreffer gegen das Ziel machen +1d6 Force. Advantage, um es aufzuspüren.'],
+  'Ice Knife':[1,'Action','60 ft',0,0,'Ranged Spell Attack, 1d10 Piercing. Danach explodiert es: DEX Save in 5 ft, 2d6 Cold.'],
+  'Identify':[1,'1 Minute','Touch',0,1,'Du erfährst alle Eigenschaften eines magischen Gegenstands.'],
+  'Illusory Script':[1,'1 Minute','Touch',0,1,'Eine geheime Nachricht, die nur bestimmte Personen lesen können.'],
+  'Inflict Wounds':[1,'Action','Touch',0,0,'CON Save, sonst 2d10 Necrotic, halb bei Erfolg.'],
+  'Jump':[1,'Bonus Action','Touch',0,0,'Eine Minute lang springt das Ziel bis zu 30 ft weit.'],
+  'Longstrider':[1,'Action','Touch',0,0,'Eine Stunde lang +10 ft Speed.'],
+  'Mage Armor':[1,'Action','Touch',0,0,'Ohne Rüstung ist die AC 8 Stunden lang 13 + DEX.'],
+  'Magic Missile':[1,'Action','120 ft',0,0,'Drei Geschosse treffen automatisch, je 1d4 + 1 Force.'],
+  'Protection from Evil and Good':[1,'Action','Touch',1,0,'Schutz vor Aberrationen, Himmlischen, Elementaren, Feen, Unholden und Untoten.'],
+  'Purify Food and Drink':[1,'Action','10 ft',0,1,'Reinigt Essen und Trinken von Gift und Krankheit.'],
+  'Ray of Sickness':[1,'Action','60 ft',0,0,'Ranged Spell Attack, 2d8 Poison und Poisoned bis zu deinem nächsten Zug.'],
+  'Sanctuary':[1,'Bonus Action','30 ft',0,0,'Wer das Ziel angreifen will, muss einen WIS Save schaffen.'],
+  'Searing Smite':[1,'Bonus Action','Self',0,0,'Nach einem Nahkampftreffer: +1d6 Fire, das Ziel brennt jede Runde weiter, bis es einen CON Save schafft.'],
+  'Shield':[1,'Reaction','Self',0,0,'Wenn du getroffen wirst: +5 AC bis zu deinem nächsten Zug.'],
+  'Shield of Faith':[1,'Bonus Action','60 ft',1,0,'+2 AC für 10 Minuten.'],
+  'Silent Image':[1,'Action','60 ft',1,0,'Eine lautlose Illusion bis 15-ft-Würfel, die du bewegen kannst.'],
+  'Sleep':[1,'Action','60 ft',1,0,'Kreaturen in 5 ft Radius machen einen WIS Save, sonst Incapacitated und dann Unconscious.'],
+  'Speak with Animals':[1,'Action','Self',0,1,'Zehn Minuten lang sprichst du mit Tieren.'],
+  "Tasha's Hideous Laughter":[1,'Action','30 ft',1,0,'WIS Save, sonst fällt das Ziel lachend um und kann nichts tun.'],
+  'Thunderous Smite':[1,'Bonus Action','Self',0,0,'Nach einem Nahkampftreffer: +2d6 Thunder, STR Save, sonst 10 ft weg und Prone.'],
+  'Thunderwave':[1,'Action','Self (15-ft-Würfel)',0,0,'CON Save, sonst 2d8 Thunder und 10 ft weggeschleudert. Halb bei Erfolg.'],
+  'Unseen Servant':[1,'Action','60 ft',0,1,'Ein unsichtbarer Diener erledigt eine Stunde lang einfache Aufgaben.'],
+  'Witch Bolt':[1,'Action','60 ft',1,0,'Ranged Spell Attack, 2d12 Lightning. In den Folgerunden 1d12 als Bonusaktion.'],
+  'Wrathful Smite':[1,'Bonus Action','Self',0,0,'Nach einem Nahkampftreffer: +1d6 Necrotic, WIS Save, sonst Frightened.']};
+const SPL={
+  Bard:[['Blade Ward','Dancing Lights','Friends','Light','Mage Hand','Mending','Message','Minor Illusion','Prestidigitation','Starry Wisp','Thunderclap','True Strike','Vicious Mockery'],
+    ['Animal Friendship','Bane','Charm Person','Color Spray','Command','Comprehend Languages','Cure Wounds','Detect Magic','Disguise Self','Dissonant Whispers','Faerie Fire','Feather Fall','Healing Word','Heroism','Identify','Illusory Script','Longstrider','Silent Image','Sleep','Speak with Animals',"Tasha's Hideous Laughter",'Thunderwave','Unseen Servant']],
+  Cleric:[['Guidance','Light','Mending','Resistance','Sacred Flame','Spare the Dying','Thaumaturgy','Toll the Dead','Word of Radiance'],
+    ['Bane','Bless','Command','Create or Destroy Water','Cure Wounds','Detect Evil and Good','Detect Magic','Detect Poison and Disease','Guiding Bolt','Healing Word','Inflict Wounds','Protection from Evil and Good','Purify Food and Drink','Sanctuary','Shield of Faith']],
+  Druid:[['Druidcraft','Elementalism','Guidance','Mending','Message','Poison Spray','Produce Flame','Resistance','Shillelagh','Spare the Dying','Starry Wisp','Thorn Whip','Thunderclap'],
+    ['Animal Friendship','Charm Person','Create or Destroy Water','Cure Wounds','Detect Magic','Detect Poison and Disease','Entangle','Faerie Fire','Fog Cloud','Goodberry','Healing Word','Ice Knife','Jump','Longstrider','Protection from Evil and Good','Purify Food and Drink','Speak with Animals','Thunderwave']],
+  Paladin:[[],['Bless','Command','Compelled Duel','Cure Wounds','Detect Evil and Good','Detect Magic','Detect Poison and Disease','Divine Favor','Divine Smite','Heroism','Protection from Evil and Good','Purify Food and Drink','Searing Smite','Shield of Faith','Thunderous Smite','Wrathful Smite']],
+  Ranger:[[],['Alarm','Animal Friendship','Cure Wounds','Detect Magic','Detect Poison and Disease','Ensnaring Strike','Entangle','Fog Cloud','Goodberry','Hail of Thorns',"Hunter's Mark",'Jump','Longstrider','Speak with Animals']],
+  Sorcerer:[['Acid Splash','Blade Ward','Chill Touch','Dancing Lights','Elementalism','Fire Bolt','Friends','Light','Mage Hand','Mending','Message','Mind Sliver','Minor Illusion','Poison Spray','Prestidigitation','Ray of Frost','Shocking Grasp','Sorcerous Burst','Thunderclap','True Strike'],
+    ['Burning Hands','Charm Person','Chromatic Orb','Color Spray','Comprehend Languages','Detect Magic','Disguise Self','Expeditious Retreat','False Life','Feather Fall','Fog Cloud','Grease','Ice Knife','Jump','Mage Armor','Magic Missile','Ray of Sickness','Shield','Silent Image','Sleep','Thunderwave','Witch Bolt']],
+  Warlock:[['Blade Ward','Chill Touch','Eldritch Blast','Friends','Mage Hand','Mind Sliver','Minor Illusion','Poison Spray','Prestidigitation','Thunderclap','Toll the Dead','True Strike'],
+    ['Armor of Agathys','Arms of Hadar','Bane','Charm Person','Comprehend Languages','Detect Magic','Expeditious Retreat','Hellish Rebuke','Hex','Illusory Script','Protection from Evil and Good','Speak with Animals',"Tasha's Hideous Laughter",'Unseen Servant','Witch Bolt']],
+  Wizard:[['Acid Splash','Blade Ward','Chill Touch','Dancing Lights','Elementalism','Fire Bolt','Friends','Light','Mage Hand','Mending','Message','Mind Sliver','Minor Illusion','Poison Spray','Prestidigitation','Ray of Frost','Shocking Grasp','Thunderclap','Toll the Dead','True Strike'],
+    ['Alarm','Burning Hands','Charm Person','Chromatic Orb','Color Spray','Comprehend Languages','Detect Magic','Disguise Self','Expeditious Retreat','False Life','Feather Fall','Find Familiar','Floating Disk','Fog Cloud','Grease','Ice Knife','Identify','Illusory Script','Jump','Longstrider','Mage Armor','Magic Missile','Protection from Evil and Good','Ray of Sickness','Shield','Silent Image','Sleep',"Tasha's Hideous Laughter",'Thunderwave','Unseen Servant']]};
+const POINT_COST={8:0,9:1,10:2,11:3,12:4,13:5,14:7,15:9};
+
+/* ================= guided character builder: 2024 rules, level 1 =================
+   A draft is kept per player in this browser until the character is created. Every step can be revisited;
+   derive() turns the draft into everything the steps and the finished sheet need, missing() lists what is still open. */
+const BSTEPS=[['cls','Klasse'],['bg','Herkunft'],['sp','Spezies'],['ab','Attribute'],['sk','Fertigkeiten'],['spl','Spells'],['eq','Ausrüstung'],['det','Details'],['end','Fertig']];
+const PRIO={Barbarian:['str','con','dex','wis','cha','int'],Bard:['cha','dex','con','wis','int','str'],Cleric:['wis','con','str','dex','cha','int'],Druid:['wis','con','dex','int','cha','str'],
+  Fighter:['str','con','dex','wis','cha','int'],Monk:['dex','wis','con','str','int','cha'],Paladin:['str','cha','con','wis','dex','int'],Ranger:['dex','wis','con','str','int','cha'],
+  Rogue:['dex','con','int','wis','cha','str'],Sorcerer:['cha','con','dex','wis','int','str'],Warlock:['cha','con','dex','wis','int','str'],Wizard:['int','con','dex','wis','cha','str']};
+const STD=[15,14,13,12,10,8];
+const ALLTOOLS=[...TOOLS.artisan,...TOOLS.music,...TOOLS.gaming,'Disguise Kit','Forgery Kit','Herbalism Kit',"Navigator's Tools","Poisoner's Kit","Thieves' Tools"];
+const TOOLCAT={artisan:"Artisan's Tools",music:'Musikinstrument',gaming:'Spielset'};
+const ALLC=Object.keys(SP).filter(n=>SP[n][0]===0).sort(),ALLR=Object.keys(SP).filter(n=>SP[n][0]===1&&SP[n][4]).sort();
+const MI_LISTS=['Cleric','Druid','Wizard'],SPAB=['int','wis','cha'];
+/* damage cantrips also go on the attack list: dice, damage type, save (null = spell attack roll) */
+const ATKC={'Acid Splash':['1d6','acid','dex'],'Chill Touch':['1d10','necrotic',null],'Eldritch Blast':['1d10','force',null],'Fire Bolt':['1d10','fire',null],'Mind Sliver':['1d6','psychic','int'],
+  'Poison Spray':['1d12','poison',null],'Produce Flame':['1d8','fire',null],'Ray of Frost':['1d8','cold',null],'Sacred Flame':['1d8','radiant','dex'],'Shocking Grasp':['1d8','lightning',null],
+  'Sorcerous Burst':['1d8','Element nach Wahl',null],'Starry Wisp':['1d8','radiant',null],'Thorn Whip':['1d6','piercing',null],'Thunderclap':['1d6','thunder','con'],
+  'Toll the Dead':['1d8 (1d12 verletzt)','necrotic','wis'],'Vicious Mockery':['1d6','psychic','wis'],'Word of Radiance':['1d6','radiant','con']};
+
+function blankDraft(){return {v:1,step:0,far:0,cls:'',cc:{style:'',order:'',inv:'',mastery:[]},bg:'',bgTool:'',bgEq:'A',sp:'',spCh:'',size:'',spAb:'',feat2:'',
+  abM:'std',std:{},pbuy:{str:8,dex:8,con:8,int:8,wis:8,cha:8},man:{str:'',dex:'',con:'',int:'',wis:'',cha:''},bonus:'21',b2:'',b1:'',
+  skills:[],keen:'',skillful:'',fp:{bg:{},sp:{}},exp:[],langs:[],ctools:[],spells:{c:[],l1:[],prep:[]},tome:{c:[],r:[]},eqC:'A',
+  name:'',align:'',age:'',height:'',look:'',traits:'',ideals:'',bonds:'',flaws:'',story:''}}
+function normDraft(x){const d=Object.assign(blankDraft(),x||{}),b=blankDraft();
+  ['cc','pbuy','man','spells','tome'].forEach(k=>{d[k]=Object.assign(b[k],d[k]||{})});
+  d.fp=Object.assign({bg:{},sp:{}},d.fp||{});['skills','exp','langs','ctools'].forEach(k=>{if(!Array.isArray(d[k]))d[k]=[]});
+  ['c','l1','prep'].forEach(k=>{if(!Array.isArray(d.spells[k]))d.spells[k]=[]});['c','r'].forEach(k=>{if(!Array.isArray(d.tome[k]))d.tome[k]=[]});
+  if(!Array.isArray(d.cc.mastery))d.cc.mastery=[];d.step=clamp(num(d.step),0,BSTEPS.length-1);return d}
+const draftKey=()=>'draft-'+(S.uid||'x');
+const hasDraft=()=>{const x=LS.get(draftKey(),null);return !!(x&&(x.cls||x.bg||x.sp||x.name))};
+
+function weaponProf(cw,w){const W=WEAPONS[w];if(!W)return false;if(W[2]==='s')return cw.includes('s');if(cw.includes('m'))return true;
+  if(cw.includes('ml'))return /Light/.test(W[4]);if(cw.includes('mfl'))return /Finesse|Light/.test(W[4]);return false}
+function speciesSpells(d){
+  const out=[],ab=d.spAb;
+  if(d.sp==='Aasimar')out.push({n:'Light',ab:'cha'});
+  if(d.sp==='Elf'&&LINEAGE_CANTRIP[d.spCh])out.push({n:LINEAGE_CANTRIP[d.spCh],ab});
+  if(d.sp==='Gnome'&&d.spCh==='Forest Gnome')out.push({n:'Minor Illusion',ab},{n:'Speak with Animals',ab,note:'So oft wie dein Proficiency Bonus pro Long Rest ohne Slot.'});
+  if(d.sp==='Gnome'&&d.spCh==='Rock Gnome')out.push({n:'Mending',ab},{n:'Prestidigitation',ab});
+  if(d.sp==='Tiefling'){out.push({n:'Thaumaturgy',ab});if(LINEAGE_CANTRIP[d.spCh])out.push({n:LINEAGE_CANTRIP[d.spCh],ab})}
+  return out}
+const needSpAb=d=>['Elf','Gnome','Tiefling'].includes(d.sp);
+const raceName=d=>!d.sp?'':d.spCh&&(d.sp==='Elf'||d.sp==='Gnome')?d.spCh:d.spCh?d.sp+' ('+d.spCh+')':d.sp;
+
+function derive(d){
+  const C=C24[d.cls]||null,B=BG24[d.bg]||null,P=SPECIES[d.sp]||null,o={C,B,P};
+  /* origin feats: one from the background, a second one for humans (only Magic Initiate and Skilled may repeat) */
+  o.feats=[];if(B)o.feats.push({src:'bg',n:B.feat,list:B.fl||''});
+  o.feat2dup=n=>!!B&&B.feat===n&&!['Magic Initiate','Skilled'].includes(n);
+  if(P&&P.versatile&&FEATS[d.feat2]&&!o.feat2dup(d.feat2))o.feats.push({src:'sp',n:d.feat2,list:''});
+  o.has=n=>o.feats.some(f=>f.n===n);
+  /* ability scores */
+  o.base={};o.pbLeft=27;
+  AB.forEach(a=>{let v=null;
+    if(d.abM==='std')v=STD.includes(d.std[a])?d.std[a]:null;
+    else if(d.abM==='pb'){v=clamp(Math.round(num(d.pbuy[a]))||8,8,15);o.pbLeft-=POINT_COST[v]}
+    else v=d.man[a]===''||d.man[a]==null?null:clamp(Math.round(num(d.man[a])),3,20);
+    o.base[a]=v});
+  o.bon={};AB.forEach(a=>{o.bon[a]=0});
+  if(B){if(d.bonus==='111')B.ab.forEach(a=>{o.bon[a]+=1});else{if(B.ab.includes(d.b2))o.bon[d.b2]+=2;if(B.ab.includes(d.b1)&&d.b1!==d.b2)o.bon[d.b1]+=1}}
+  o.ab={};AB.forEach(a=>{o.ab[a]=o.base[a]==null?null:Math.min(20,o.base[a]+o.bon[a])});
+  o.m=a=>mod(o.ab[a]==null?10:o.ab[a]);
+  /* class choices */
+  o.cw=C?C.w.slice():[];if(d.cc.order==='Protector'||d.cc.order==='Warden')o.cw.push('m');
+  o.mastOpts=C&&C.mastery?Object.keys(WEAPONS).filter(w=>weaponProf(o.cw,w)&&(d.cls!=='Barbarian'||!WEAPONS[w][3])):[];
+  o.mastery=C&&C.mastery?d.cc.mastery.filter(w=>o.mastOpts.includes(w)).slice(0,C.mastery):[];
+  /* skills, in the order the rules hand them out */
+  const known=new Set(B?B.sk:[]);o.bgSk=B?B.sk.slice():[];
+  o.clsOpts=C?C.skills[1]:[];o.clsN=C?C.skills[0]:0;o.kCls=new Set(known);
+  o.clsSk=d.skills.filter(x=>o.clsOpts.includes(x)&&!known.has(x)).slice(0,o.clsN);o.clsSk.forEach(x=>known.add(x));
+  o.kKeen=new Set(known);o.keen=P&&P.keen&&P.keen.includes(d.keen)&&!known.has(d.keen)?d.keen:'';if(o.keen)known.add(o.keen);
+  o.kSkillful=new Set(known);o.skillful=P&&P.skillful&&ALLSKILLS.includes(d.skillful)&&!known.has(d.skillful)?d.skillful:'';if(o.skillful)known.add(o.skillful);
+  /* tools */
+  const tools=[],addT=t=>{if(t&&!tools.includes(t))tools.push(t)};
+  o.bgToolOpts=B&&TOOLS[B.tool]?TOOLS[B.tool]:null;
+  if(B){if(o.bgToolOpts){if(o.bgToolOpts.includes(d.bgTool))addT(d.bgTool)}else addT(B.tool)}
+  (C&&C.fixedTools||[]).forEach(addT);
+  o.ctoolOpts=C&&C.tools?(C.tools.music?TOOLS.music:[...TOOLS.artisan,...TOOLS.music]):[];o.ctoolN=C&&C.tools?(C.tools.music||C.tools.monk||0):0;
+  o.tCls=tools.slice();o.ctools=d.ctools.filter(t=>o.ctoolOpts.includes(t)&&!tools.includes(t)).slice(0,o.ctoolN);o.ctools.forEach(addT);
+  o.featTools={};o.tFeat={};o.skilled={};o.kSkilled={};
+  o.feats.forEach(f=>{const fp=d.fp[f.src]||{};
+    if(f.n==='Crafter'||f.n==='Musician'){const opts=f.n==='Crafter'?TOOLS.artisan:TOOLS.music;o.tFeat[f.src]=tools.slice();
+      o.featTools[f.src]=(fp.tools||[]).filter(t=>opts.includes(t)&&!tools.includes(t)).slice(0,3);o.featTools[f.src].forEach(addT)}});
+  o.feats.forEach(f=>{const fp=d.fp[f.src]||{};
+    if(f.n==='Skilled'){o.kSkilled[f.src]={sk:new Set(known),t:tools.slice()};
+      o.skilled[f.src]=(fp.picks||[]).filter(x=>ALLSKILLS.includes(x)?!known.has(x):ALLTOOLS.includes(x)&&!tools.includes(x)).slice(0,3);
+      o.skilled[f.src].forEach(x=>{if(ALLSKILLS.includes(x))known.add(x);else addT(x)})}});
+  o.known=known;o.tools=tools;
+  o.expN=C&&C.expertise||0;o.exp=d.exp.filter(x=>known.has(x)).slice(0,o.expN);
+  /* languages */
+  o.langN=2+(C&&C.extraLangPick||0);o.langPicks=d.langs.filter(l=>LANGS.includes(l)).slice(0,o.langN);
+  o.langs=['Common'].concat(o.langPicks,C&&C.extraLang||[]);
+  /* spells */
+  o.sc=C&&C.sc||null;o.needSpAb=needSpAb(d);
+  o.spAuto=speciesSpells(d).map(x=>Object.assign({src:'Spezies'},x));
+  if(o.sc&&o.sc.always)o.sc.always.forEach(n=>o.spAuto.push({n,ab:o.sc.ab,src:d.cls,note:'Immer vorbereitet, zählt nicht mit.'}));
+  if(d.cls==='Druid')o.spAuto.push({n:'Speak with Animals',ab:'wis',src:'Druidic',note:'Immer vorbereitet, zählt nicht mit.'});
+  if(d.cls==='Warlock'&&d.cc.inv==='Pact of the Chain')o.spAuto.push({n:'Find Familiar',ab:'cha',src:'Pact of the Chain',note:'Als Magic-Aktion ohne Slot.'});
+  if(d.cls==='Warlock'&&d.cc.inv==='Armor of Shadows')o.spAuto.push({n:'Mage Armor',ab:'cha',src:'Armor of Shadows',note:'Auf dich selbst, beliebig oft ohne Slot.'});
+  const kSp=new Set(o.spAuto.map(x=>x.n));o.kSpCls=new Set(kSp);
+  o.cN=o.sc?o.sc.cantrips+(d.cc.order==='Thaumaturge'||d.cc.order==='Magician'?1:0):0;
+  o.lN=o.sc?(o.sc.book||o.sc.prep):0;
+  o.cOpts=o.sc?SPL[d.cls][0]:[];o.lOpts=o.sc?SPL[d.cls][1]:[];
+  o.spC=d.spells.c.filter(n=>o.cOpts.includes(n)&&!kSp.has(n)).slice(0,o.cN);
+  o.spL=d.spells.l1.filter(n=>o.lOpts.includes(n)&&!kSp.has(n)).slice(0,o.lN);
+  o.spP=o.sc&&o.sc.book?d.spells.prep.filter(n=>o.spL.includes(n)).slice(0,o.sc.prep):o.spL.slice();
+  o.spC.forEach(n=>kSp.add(n));o.spL.forEach(n=>kSp.add(n));
+  o.mi={};
+  o.feats.filter(f=>f.n==='Magic Initiate').forEach(f=>{const fp=d.fp[f.src]||{};let list=f.list||fp.list||'';
+    if(!MI_LISTS.includes(list)||(f.src==='sp'&&o.mi.bg&&o.mi.bg.list===list))list='';
+    const x={src:f.src,list,fixed:!!f.list,ab:SPAB.includes(fp.ab)?fp.ab:'',before:new Set(kSp)};
+    x.c=list?(fp.c||[]).filter(n=>SPL[list][0].includes(n)&&!kSp.has(n)).slice(0,2):[];
+    x.l1=list&&SPL[list][1].includes(fp.l1)&&!kSp.has(fp.l1)?fp.l1:'';
+    x.c.forEach(n=>kSp.add(n));if(x.l1)kSp.add(x.l1);o.mi[f.src]=x});
+  o.tome=null;
+  if(d.cls==='Warlock'&&d.cc.inv==='Pact of the Tome'){o.tome={before:new Set(kSp)};
+    o.tome.c=d.tome.c.filter(n=>ALLC.includes(n)&&!kSp.has(n)).slice(0,3);o.tome.c.forEach(n=>kSp.add(n));
+    o.tome.r=d.tome.r.filter(n=>ALLR.includes(n)&&!kSp.has(n)).slice(0,2)}
+  o.anySpells=!!o.sc||o.spAuto.length>0||Object.keys(o.mi).length>0||!!o.tome;
+  return o}
+
+function missing(d,o){
+  const m=[],add=(i,t)=>m.push([i,t]),C=o.C,B=o.B,P=o.P;
+  if(!C)add(0,'Wähle eine Klasse.');
+  else{if(d.cls==='Fighter'&&!FIGHTING_STYLES[d.cc.style])add(0,'Fighting Style wählen.');
+    if(C.order&&!C.order[d.cc.order])add(0,(d.cls==='Cleric'?'Divine Order':'Primal Order')+' wählen.');
+    if(d.cls==='Warlock'&&!INVOCATIONS[d.cc.inv])add(0,'Eldritch Invocation wählen.');
+    if(C.mastery&&o.mastery.length<C.mastery)add(0,'Weapon Mastery: noch '+(C.mastery-o.mastery.length)+' Waffe'+(C.mastery-o.mastery.length>1?'n':'')+' wählen.')}
+  if(!B)add(1,'Wähle einen Background.');else if(o.bgToolOpts&&!o.bgToolOpts.includes(d.bgTool))add(1,TOOLCAT[B.tool]+' für deinen Background wählen.');
+  if(!P)add(2,'Wähle eine Spezies.');
+  else{if(P.choose&&!P.choose.opts[d.spCh])add(2,P.choose.label+' wählen.');
+    if(P.size.length>1&&!P.size.includes(d.size))add(2,'Größe wählen: Small oder Medium.');
+    if(o.needSpAb&&!SPAB.includes(d.spAb))add(2,'Zauberattribut für die Magie deiner Spezies wählen.');
+    if(P.versatile&&!o.feats.some(f=>f.src==='sp'))add(2,'Versatile: ein Origin Feat wählen.')}
+  if(AB.some(a=>o.base[a]==null))add(3,d.abM==='std'?'Alle sechs Werte des Standard Array verteilen.':'Alle sechs Attributswerte eintragen.');
+  if(d.abM==='pb'&&o.pbLeft<0)add(3,'Point Buy: '+(-o.pbLeft)+' Punkte zu viel ausgegeben.');
+  if(B&&d.bonus!=='111'&&!(B.ab.includes(d.b2)&&B.ab.includes(d.b1)&&d.b1!==d.b2))add(3,'Background-Bonus verteilen: +2 auf ein Attribut, +1 auf ein anderes.');
+  if(C&&o.clsSk.length<o.clsN)add(4,'Klassen-Skills: noch '+(o.clsN-o.clsSk.length)+' wählen.');
+  if(P&&P.keen&&!o.keen)add(4,'Keen Senses: einen Skill wählen.');
+  if(P&&P.skillful&&!o.skillful)add(4,'Skillful: einen Skill wählen.');
+  if(o.ctoolN&&o.ctools.length<o.ctoolN)add(4,(d.cls==='Bard'?'Musikinstrumente':'Tool oder Instrument')+': noch '+(o.ctoolN-o.ctools.length)+' wählen.');
+  o.feats.forEach(f=>{if(f.n==='Skilled'&&o.skilled[f.src].length<3)add(4,'Skilled: noch '+(3-o.skilled[f.src].length)+' Skills oder Tools wählen.');
+    if((f.n==='Crafter'||f.n==='Musician')&&o.featTools[f.src].length<3)add(4,f.n+': noch '+(3-o.featTools[f.src].length)+(f.n==='Crafter'?" Artisan's Tools":' Instrumente')+' wählen.')});
+  if(o.expN&&o.exp.length<o.expN)add(4,'Expertise: noch '+(o.expN-o.exp.length)+' Skill'+(o.expN-o.exp.length>1?'s':'')+' wählen.');
+  if(o.langPicks.length<o.langN)add(4,'Sprachen: noch '+(o.langN-o.langPicks.length)+' wählen.');
+  if(o.sc){if(o.spC.length<o.cN)add(5,'Cantrips: noch '+(o.cN-o.spC.length)+' wählen.');
+    if(o.spL.length<o.lN)add(5,(o.sc.book?'Zauberbuch':'Spells des 1. Grades')+': noch '+(o.lN-o.spL.length)+' wählen.');
+    if(o.sc.book&&o.spP.length<o.sc.prep)add(5,'Vorbereitet: noch '+(o.sc.prep-o.spP.length)+' Spells aus dem Zauberbuch markieren.')}
+  Object.values(o.mi).forEach(x=>{if(!x.list)add(5,'Magic Initiate: Spell-Liste wählen.');else{if(x.c.length<2)add(5,'Magic Initiate: noch '+(2-x.c.length)+' Cantrip'+(2-x.c.length>1?'s':'')+' wählen.');if(!x.l1)add(5,'Magic Initiate: einen Spell des 1. Grades wählen.')}
+    if(!x.ab)add(5,'Magic Initiate: Zauberattribut wählen.')});
+  if(o.tome){if(o.tome.c.length<3)add(5,'Pact of the Tome: noch '+(3-o.tome.c.length)+' Cantrips wählen.');if(o.tome.r.length<2)add(5,'Pact of the Tome: noch '+(2-o.tome.r.length)+' Ritual-Spells wählen.')}
+  if(!String(d.name||'').trim())add(7,'Gib deinem Charakter einen Namen.');
+  return m}
+
+/* ---------- the finished sheet ---------- */
+function eqItems(d,o){
+  const C=o.C,B=o.B,out=[],put=(n,q)=>{const x=out.find(i=>i.n===n);if(x)x.q+=q;else out.push({n,q})};
+  const ph=n=>/\((siehe Tools|deine Wahl)\)/.test(n);
+  const opt=C&&C.eq[d.eqC]||C&&C.eq.A;
+  if(opt)opt.items.forEach(([n,q])=>put(ph(n)?(o.ctools[0]||n.replace(/ \(siehe Tools\)/,'')):n,q));
+  if(B&&d.bgEq!=='B')B.eq.forEach(([n,q])=>put(ph(n)&&o.bgToolOpts&&o.bgToolOpts.includes(d.bgTool)?d.bgTool:n,q));
+  return {items:out,gp:(opt?opt.gp:0)+(B?(d.bgEq==='B'?50:B.gp):0)}}
+function acOf(d,o,items){
+  const C=o.C,dex=o.m('dex'),armor=items.find(i=>ARMOR[i.n]),shield=items.some(i=>i.n==='Shield');
+  let ac,note;
+  if(armor){const [b,cap]=ARMOR[armor.n];ac=b+Math.min(dex,cap);note=armor.n}
+  else if(C&&C.unarmored==='con'){ac=10+dex+o.m('con');note='Unarmored Defense'}
+  else if(C&&C.unarmored==='wis'&&!shield){ac=10+dex+o.m('wis');note='Unarmored Defense'}
+  else{ac=10+dex;note='ohne Rüstung'}
+  if(shield){ac+=2;note+=', Shield'}
+  if(d.cls==='Fighter'&&d.cc.style==='Defense'&&armor){ac+=1;note+=', Defense'}
+  return {ac,note}}
+function buildSheet(d){
+  const o=derive(d),C=o.C,B=o.B,P=o.P,s=blankSheet(),PB=2;
+  const uses=u=>u==='pb'?PB:u==='cha'?Math.max(1,o.m('cha')):num(u);
+  s.name=String(d.name||'').trim();s.cls=d.cls;s.lvl=1;s.race=raceName(d);s.bg=d.bg;s.align=d.align;
+  s.size=[P?(P.size.length>1?d.size:P.size[0]):'',String(d.height||'').trim()].filter(Boolean).join(', ');
+  ['age','look','traits','ideals','bonds','flaws','story'].forEach(k=>{s[k]=String(d[k]||'')});
+  AB.forEach(a=>{s.ab[a]=o.ab[a]==null?10:o.ab[a]});
+  if(C){s.hd=C.hd;s.saves=C.sv.slice()}
+  o.known.forEach(k=>{s.skills[k]=1});o.exp.forEach(k=>{s.skills[k]=2});
+  s.hpMax=Math.max(1,(C?C.hd:8)+o.m('con')+(d.sp==='Dwarf'?1:0)+(o.has('Tough')?2:0));s.hp=s.hpMax;
+  s.speed=(P?(d.sp==='Elf'&&d.spCh==='Wood Elf'?35:P.speed):30)+' ft';
+  s.senses=[P&&P.dv?'Darkvision '+(d.spCh==='Drow'?120:P.dv)+' ft':'',d.cc.style==='Blind Fighting'&&d.cls==='Fighter'?'Blindsight 10 ft':''].filter(Boolean).join(', ');
+  if(o.has('Alert'))s.initMisc=PB;
+  s.insp=d.sp==='Human';
+  s.langs=o.langs.join(', ');
+  const ex=items=>items.length?items.join(', '):'';
+  const armorT=C?C.armor+(d.cc.order==='Protector'?', Heavy':''):'',weapT=C?C.weapons+((d.cc.order==='Protector'||d.cc.order==='Warden')&&!/Martial/.test(C.weapons)?', Martial':''):'';
+  s.profs=[armorT?'Armor: '+armorT:'',weapT?'Weapons: '+weapT:'',o.tools.length?'Tools: '+ex(o.tools):'',o.mastery.length?'Weapon Mastery: '+o.mastery.map(w=>w+' ('+WEAPONS[w][5]+')').join(', '):''].filter(Boolean).join('\n');
+  /* equipment, armor class, attacks */
+  const eq=eqItems(d,o);
+  s.items=eq.items.map(i=>({id:rid(),n:i.n,q:i.q,note:PACKS[i.n]||(WEAPONS[i.n]?WEAPONS[i.n][0]+' '+WEAPONS[i.n][1]+(WEAPONS[i.n][4]?', '+WEAPONS[i.n][4]:''):ARMOR[i.n]?'AC '+ARMOR[i.n][0]+(ARMOR[i.n][1]===99?' + DEX':ARMOR[i.n][1]?' + DEX (max 2)':''):i.n==='Shield'?'+2 AC':'')}));
+  s.coins.gp=eq.gp;
+  const a=acOf(d,o,eq.items);s.ac=a.ac;s.acNote=a.note;
+  const monkW=w=>d.cls==='Monk'&&!WEAPONS[w][3]&&(WEAPONS[w][2]==='s'||/Light/.test(WEAPONS[w][4]))&&!/Heavy|Two-Handed/.test(WEAPONS[w][4]);
+  eq.items.filter(i=>WEAPONS[i.n]).forEach(i=>{const W=WEAPONS[i.n],rng=!!W[3],fin=/Finesse/.test(W[4])||monkW(i.n);
+    const ab=rng?'dex':fin&&o.m('dex')>o.m('str')?'dex':'str';let dmg=W[0];if(monkW(i.n)&&(dmg==='1d4'||dmg==='1'))dmg='1d6';
+    const mastered=o.mastery.includes(i.n);
+    s.atk.push({id:rid(),n:i.n,ab,prof:weaponProf(o.cw,i.n),bonus:rng&&d.cc.style==='Archery'&&d.cls==='Fighter'?2:0,dmg,dab:true,ty:W[1],
+      note:[rng?'Ranged':'Melee',W[4],mastered?'Mastery: '+W[5]:''].filter(Boolean).join(' · ')})});
+  const unarmed=d.cls==='Monk'?['1d6','Martial Arts: auch als Bonusaktion nach der Attack-Aktion']:d.cc.style==='Unarmed Fighting'&&d.cls==='Fighter'?['1d6','1d8 ohne Waffe und Schild']:o.has('Tavern Brawler')?['1d4','Tavern Brawler: Einsen neu würfeln']:['1',''];
+  s.atk.push({id:rid(),n:'Unarmed Strike',ab:d.cls==='Monk'&&o.m('dex')>o.m('str')?'dex':'str',prof:true,bonus:0,dmg:unarmed[0],dab:true,ty:'bludgeoning',note:['Melee',unarmed[1]].filter(Boolean).join(' · ')});
+  /* spells */
+  const sp=[],addS=(n,prep,extra,ab)=>{if(sp.some(x=>x.n===n)||!SP[n])return;const X=SP[n];
+    sp.push({id:rid(),n,l:X[0],prep,t:X[1],r:X[2],c:!!X[3],rit:!!X[4],d:X[5]+(extra?' '+extra:''),_ab:ab})};
+  const cab=o.sc?o.sc.ab:'';
+  o.spAuto.forEach(x=>addS(x.n,true,[x.src+(x.ab?' ('+ABS[x.ab]+')':'')+'.',x.note||''].filter(Boolean).join(' '),x.ab||cab));
+  o.spC.forEach(n=>addS(n,true,'',cab));o.spL.forEach(n=>addS(n,o.spP.includes(n),o.sc&&o.sc.book?'Im Zauberbuch.':'',cab));
+  Object.values(o.mi).forEach(x=>{const tag='Magic Initiate ('+x.list+(x.ab?', '+ABS[x.ab]:'')+').';x.c.forEach(n=>addS(n,true,tag,x.ab));
+    if(x.l1)addS(x.l1,true,tag+' Einmal pro Long Rest ohne Slot, mit Slots auch öfter.',x.ab)});
+  if(o.tome){o.tome.c.forEach(n=>addS(n,true,'Book of Shadows.','cha'));o.tome.r.forEach(n=>addS(n,true,'Book of Shadows: als Ritual wirken.','cha'))}
+  sp.sort((x,y)=>x.l-y.l||x.n.localeCompare(y.n));
+  sp.forEach(x=>{const k=ATKC[x.n];if(k){const ab=x._ab||cab||'cha';
+    s.atk.push(k[2]?{id:rid(),n:x.n,ab:'none',prof:true,bonus:0,dmg:k[0],dab:false,ty:k[1],note:'Cantrip · '+x.r+' · '+ABS[k[2]]+' Save gegen DC '+(8+PB+o.m(ab))}
+      :{id:rid(),n:x.n,ab,prof:true,bonus:0,dmg:k[0],dab:false,ty:k[1],note:'Cantrip · '+x.r+' · Spell Attack'})}
+    delete x._ab});
+  s.spells=sp;
+  if(o.sc){const t=o.sc.type;s.cast={type:t,ab:o.sc.ab,slots:slotsFor(t,1),used:[0,0,0,0,0,0,0,0,0]}}
+  else{const first=o.spAuto.find(x=>x.ab)||Object.values(o.mi).find(x=>x.ab);if(first)s.cast.ab=first.ab}
+  /* features */
+  const F=(n,dsc,src,u,rest)=>s.feats.push({id:rid(),n,src,d:dsc,max:u?uses(u):0,used:0,rest:u?(rest||'long'):''});
+  if(C){const src=d.cls+' 1';
+    C.f.forEach(([n,dsc,u,r])=>F(n,n==='Expertise'&&o.exp.length?dsc+' Gewählt: '+o.exp.join(', ')+'.':dsc,src,u,r));
+    if(d.cls==='Fighter'&&FIGHTING_STYLES[d.cc.style])F('Fighting Style: '+d.cc.style,FIGHTING_STYLES[d.cc.style],src);
+    if(C.order&&C.order[d.cc.order])F((d.cls==='Cleric'?'Divine Order: ':'Primal Order: ')+d.cc.order,C.order[d.cc.order],src);
+    if(d.cls==='Warlock'&&INVOCATIONS[d.cc.inv])F('Eldritch Invocation: '+d.cc.inv,INVOCATIONS[d.cc.inv],src);
+    if(o.mastery.length)F('Weapon Mastery',o.mastery.map(w=>w+' ('+WEAPONS[w][5]+'): '+MASTERY[WEAPONS[w][5]]).join('\n')+'\nNach jeder Long Rest darfst du eine Waffe tauschen.',src)}
+  if(P){P.t.forEach(([n,dsc,u,r])=>F(n,dsc,'Spezies',u,r));
+    if(P.choose&&P.choose.opts[d.spCh])F(P.choose.label+': '+d.spCh,d.sp==='Dragonborn'?'Schadensart: '+P.choose.opts[d.spCh]+'.':P.choose.opts[d.spCh],'Spezies')}
+  o.feats.forEach(f=>{let dsc=FEATS[f.n].d;const x=o.mi[f.src];
+    if(x&&x.list)dsc+='\nListe: '+x.list+(x.ab?', Zauberattribut '+ABN[x.ab]:'')+'. Cantrips: '+(x.c.join(', ')||'–')+'. Spell: '+(x.l1||'–')+'.';
+    if(o.skilled[f.src]&&o.skilled[f.src].length)dsc+='\nGewählt: '+o.skilled[f.src].join(', ')+'.';
+    if(o.featTools[f.src]&&o.featTools[f.src].length)dsc+='\nGewählt: '+o.featTools[f.src].join(', ')+'.';
+    if(f.n==='Alert')dsc+='\nIm Bogen als Initiative-Zusatzbonus eingetragen. Steigt dein Proficiency Bonus, erhöh ihn dort.';
+    if(f.n==='Tough')dsc+='\nIm Hit-Point-Maximum schon eingerechnet. Beim Level up jeweils 2 dazuzählen.';
+    F(f.n,dsc,f.src==='bg'?'Feat · '+d.bg:'Feat · Human',f.n==='Lucky'?'pb':f.n==='Magic Initiate'&&x&&x.l1?1:0,'long')});
+  return s}
+
+/* ---------- small pick controls ---------- */
+function Choice({t,n,max,ex,children}){
+  return html`<section class="choice"><h3 class="h3">${t}${max?html`<span class=${'cnt'+(n>=max?' full':'')}>${n} von ${max}</span>`:null}</h3>${ex?html`<p class="sm soft" style="max-width:70ch;margin:.25rem 0 0">${ex}</p>`:null}${children}</section>`}
+/* opts: [key, title, text, why-disabled, tags] */
+function Opts({opts,sel,max,on,cls}){
+  const s=Array.isArray(sel)?sel:sel?[sel]:[],multi=Array.isArray(sel),full=multi&&s.length>=max,[all,setAll]=useState(false);
+  const done=multi?full:s.length>0,long=opts.length>8,fold=long&&done&&!all,shown=fold?opts.filter(x=>s.includes(x[0])):opts;
+  return html`<div class=${'olist'+(cls?' '+cls:'')}>${shown.map(([k,t,x,dis,tags])=>{const p=s.includes(k);
+    return html`<button key=${k} type="button" class="oitem" aria-pressed=${p} disabled=${!p&&(!!dis||(full&&max>1))}
+      onClick=${()=>on(multi?(p?s.filter(y=>y!==k):max===1?[k]:s.concat(k)):(p?'':k))}>
+      <b>${t}</b>${tags&&tags.length?html`<span class="tags">${tags.map(g=>html`<span class="tag" key=${g}>${g}</span>`)}</span>`:null}
+      ${x?html`<span class="d">${x}</span>`:null}${dis&&!p?html`<span class="d why">${dis}</span>`:null}</button>`})}</div>
+    ${long&&done?html`<button type="button" class="linkbtn" style="margin-top:.6rem" onClick=${()=>setAll(!all)}>${fold?'Alle '+opts.length+' zur Auswahl zeigen':'Nur deine Auswahl zeigen'}</button>`:null}`}
+function Chips({opts,sel,max,on}){ /* opts: [key, label, sub, why-disabled] */
+  const full=sel.length>=max;
+  return html`<div class="chips" style="margin-top:.6rem">${opts.map(([k,l,sub,dis])=>{const p=sel.includes(k);
+    return html`<button key=${k} type="button" class="chip" aria-pressed=${p} title=${dis||null} disabled=${!p&&(!!dis||(full&&max>1))} onClick=${()=>on(p?sel.filter(y=>y!==k):max===1?[k]:sel.concat(k))}>${l}${sub?html`<small>${sub}</small>`:null}</button>`})}</div>`}
+const skOpt=(k,dis)=>[k,k,ABS[(SK.find(x=>x[0]===k)||[])[1]]+' · '+SKILL_DE[k],dis];
+const spOpt=(n,before)=>{const X=SP[n];return [n,n,X[5],before&&before.has(n)?'Kennst du schon.':'',[X[1],X[2],X[3]?'Concentration':'',X[4]?'Ritual':''].filter(Boolean)]};
+
+/* ---------- the steps ---------- */
+function StepCls({d,o,up}){
+  const C=o.C;
+  return html`<p class="lead">Deine Klasse ist dein Handwerk als Abenteurer. Sie entscheidet, wie du kämpfst, ob du zauberst und was du am besten kannst. Tipp auf eine Klasse, um mehr zu lesen.</p>
+    <div class="pick-grid opt-grid">${Object.keys(C24).map(k=>html`<button key=${k} type="button" class="pick" aria-pressed=${d.cls===k}
+      onClick=${()=>up(x=>{if(x.cls!==k){x.cls=k;x.cc={style:'',order:'',inv:'',mastery:[]};x.skills=[];x.exp=[];x.ctools=[];x.spells={c:[],l1:[],prep:[]};x.tome={c:[],r:[]};x.eqC='A'}})}>
+      <b>${k}</b><span class="sm soft">${C24[k].tag}</span><span class="tags"><span class="tag">d${C24[k].hd} Hit Die</span><span class="tag">${ABN[C24[k].prim]}</span>${C24[k].sc?html`<span class="tag violet">Magie</span>`:null}</span></button>`)}</div>
+    ${C?html`<div class="detail" id="b-detail">
+      <h2 class="h2">${d.cls}</h2><p>${C.d}</p><p class="soft">${C.play}</p>
+      <div class="facts">
+        <div class="fact"><small>Hit Points auf Level 1</small>${C.hd} + CON Modifier</div>
+        <div class="fact"><small>Hauptattribut</small>${ABN[C.prim]}</div>
+        <div class="fact"><small>Saving Throws</small>${C.sv.map(a=>ABN[a]).join(', ')}</div>
+        <div class="fact"><small>Skills</small>${C.skills[1].length===18?'Drei beliebige':C.skills[0]+' aus '+C.skills[1].length}</div>
+        <div class="fact"><small>Armor Training</small>${C.armor}</div>
+        <div class="fact"><small>Weapons</small>${C.weapons}</div>
+      </div>
+      <h3 class="h3">Was du auf Level 1 kannst</h3>
+      <ul class="feat-list">${C.f.map(([n,x])=>html`<li key=${n}><b>${n}.</b> ${x}</li>`)}
+        ${d.cls==='Fighter'?html`<li><b>Fighting Style.</b> Ein Kampfstil deiner Wahl, siehe unten.</li>`:null}
+        ${C.mastery?html`<li><b>Weapon Mastery.</b> Bei ${C.mastery} Waffenarten nutzt du deren Mastery-Eigenschaft, siehe unten.</li>`:null}</ul>
+      ${d.cls==='Fighter'?html`<${Choice} t="Fighting Style" ex="Ein Kampfstil, der zu deiner Waffe passt. Defense ist immer nützlich, Archery für Bogenschützen, Great Weapon Fighting für Zweihänder.">
+        <${Opts} opts=${Object.keys(FIGHTING_STYLES).map(k=>[k,k,FIGHTING_STYLES[k]])} sel=${d.cc.style} on=${v=>up(x=>{x.cc.style=v})}/><//>`:null}
+      ${C.order?html`<${Choice} t=${d.cls==='Cleric'?'Divine Order':'Primal Order'} ex=${d.cls==='Cleric'?'Welche Rolle du deinem Gott gegenüber einnimmst.':'Wie du der Natur dienst.'}>
+        <${Opts} opts=${Object.keys(C.order).map(k=>[k,k,C.order[k]])} sel=${d.cc.order} on=${v=>up(x=>{x.cc.order=v})}/><//>`:null}
+      ${d.cls==='Warlock'?html`<${Choice} t="Eldritch Invocation" ex="Eine Gabe deines Patrons. Die drei Pacts bestimmen, wie dein Warlock sich anfühlt: mit Waffe, mit Vertrautem oder mit Buch.">
+        <${Opts} opts=${Object.keys(INVOCATIONS).map(k=>[k,k,INVOCATIONS[k]])} sel=${d.cc.inv} on=${v=>up(x=>{x.cc.inv=v})}/><//>`:null}
+      ${C.mastery?html`<${Choice} t="Weapon Mastery" n=${o.mastery.length} max=${C.mastery} ex=${'Wähle '+C.mastery+' Waffenarten, deren Mastery du nutzen kannst. Am besten die Waffen, die du trägst. Was die Mastery-Eigenschaften tun, steht unter der Liste.'}>
+        <${Opts} cls="sm" opts=${o.mastOpts.map(w=>[w,w,WEAPONS[w][0]+' '+WEAPONS[w][1]+(WEAPONS[w][3]?', Fernkampf':''),'',[WEAPONS[w][5]]])} sel=${o.mastery} max=${C.mastery} on=${v=>up(x=>{x.cc.mastery=v})}/>
+        <dl class="kv sm" style="margin-top:.9rem">${Object.keys(MASTERY).map(k=>html`<dt key=${k+'t'}>${k}</dt><dd key=${k}>${MASTERY[k]}</dd>`)}</dl><//>`:null}
+    </div>`:null}`}
+
+function StepBg({d,o,up}){
+  const B=o.B;
+  return html`<p class="lead">Dein Background erzählt, was du gemacht hast, bevor du Abenteurer wurdest. Er gibt dir zwei Skills, ein Tool, ein Origin Feat, Ausrüstung und die Wahl, welche drei Attribute steigen.</p>
+    <div class="pick-grid opt-grid">${Object.keys(BG24).map(k=>html`<button key=${k} type="button" class="pick" aria-pressed=${d.bg===k} onClick=${()=>up(x=>{if(x.bg!==k){x.bg=k;x.bgTool='';x.b2='';x.b1='';x.fp.bg={}}})}>
+      <b>${k}</b><span class="sm soft">${BG24[k].d}</span><span class="tags"><span class="tag amber">${BG24[k].feat}</span></span></button>`)}</div>
+    ${B?html`<div class="detail" id="b-detail"><h2 class="h2">${d.bg}</h2><p>${B.d}</p>
+      <div class="facts">
+        <div class="fact"><small>Attribute (+2/+1 oder +1/+1/+1)</small>${B.ab.map(a=>ABN[a]).join(', ')}</div>
+        <div class="fact"><small>Skills</small>${B.sk.join(', ')}</div>
+        <div class="fact"><small>Tool</small>${o.bgToolOpts?TOOLCAT[B.tool]+' deiner Wahl':B.tool}</div>
+        <div class="fact"><small>Origin Feat</small>${B.feat}${B.fl?' ('+B.fl+')':''}</div>
+      </div>
+      <h3 class="h3">${B.feat}</h3><p class="sm" style="max-width:70ch;margin-top:.3rem">${FEATS[B.feat].d}</p>
+      ${B.feat==='Magic Initiate'?html`<p class="sm soft">Die Spells suchst du im Schritt Spells aus.</p>`:FEATS[B.feat].pick?html`<p class="sm soft">Was du dafür wählst, kommt im Schritt Fertigkeiten.</p>`:null}
+      ${o.bgToolOpts?html`<${Choice} t=${TOOLCAT[B.tool]} ex="Mit diesem Werkzeug bist du geübt. Es liegt auch in deiner Ausrüstung.">
+        <${Chips} opts=${o.bgToolOpts.map(t=>[t,t])} sel=${d.bgTool?[d.bgTool]:[]} max=${1} on=${v=>up(x=>{x.bgTool=v[0]||''})}/><//>`:null}
+      <p class="sm soft" style="margin-top:1rem">Die Attributs-Boni verteilst du im Schritt Attribute, die Ausrüstung wählst du im Schritt Ausrüstung.</p>
+    </div>`:null}`}
+
+function StepSp({d,o,up}){
+  const P=o.P;
+  return html`<p class="lead">Deine Spezies bestimmt Größe, Geschwindigkeit und ein paar besondere Fähigkeiten, etwa im Dunkeln zu sehen. Auf Attribute hat sie in den Regeln von 2024 keinen Einfluss mehr, das macht jetzt der Background.</p>
+    <div class="pick-grid opt-grid">${Object.keys(SPECIES).map(k=>html`<button key=${k} type="button" class="pick" aria-pressed=${d.sp===k} onClick=${()=>up(x=>{if(x.sp!==k){x.sp=k;x.spCh='';x.size=SPECIES[k].size.length>1?'':SPECIES[k].size[0];x.keen='';x.skillful='';x.feat2='';x.fp.sp={}}})}>
+      <b>${k}</b><span class="sm soft">${SPECIES[k].tag}</span><span class="tags"><span class="tag">${SPECIES[k].size.join(' oder ')}</span><span class="tag">${SPECIES[k].speed} ft</span></span></button>`)}</div>
+    ${P?html`<div class="detail" id="b-detail"><h2 class="h2">${d.sp}</h2><p>${P.d}</p>
+      <div class="facts">
+        <div class="fact"><small>Größe</small>${P.size.join(' oder ')}</div>
+        <div class="fact"><small>Speed</small>${P.speed} ft${d.sp==='Elf'?' (Wood Elf 35 ft)':''}</div>
+        <div class="fact"><small>Darkvision</small>${P.dv?P.dv+' ft':'keine'}</div>
+      </div>
+      <h3 class="h3">Besondere Fähigkeiten</h3>
+      <ul class="feat-list">${P.t.map(([n,x])=>html`<li key=${n}><b>${n}.</b> ${x}</li>`)}</ul>
+      ${P.choose?html`<${Choice} t=${P.choose.label}><${Opts} opts=${Object.keys(P.choose.opts).map(k=>[k,k,d.sp==='Dragonborn'?'Schadensart: '+P.choose.opts[k]:P.choose.opts[k]])} sel=${d.spCh} on=${v=>up(x=>{x.spCh=v})}/><//>`:null}
+      ${P.size.length>1?html`<${Choice} t="Größe" ex="Small ist etwa 0,6 bis 1,2 m groß, Medium etwa 1,2 bis 2,1 m. Regeltechnisch ändert das fast nichts."><div class="seg" style="margin-top:.6rem">${P.size.map(z=>html`<button key=${z} type="button" aria-pressed=${d.size===z} onClick=${()=>up(x=>{x.size=z})}>${z}</button>`)}</div><//>`:null}
+      ${o.needSpAb?html`<${Choice} t="Zauberattribut für deine Spezies-Magie" ex="Mit diesem Attribut wirkst du die Spells deiner Spezies. Nimm am besten das Attribut, mit dem auch deine Klasse zaubert, sonst dein höchstes von den dreien.">
+        <div class="seg" style="margin-top:.6rem">${SPAB.map(a=>html`<button key=${a} type="button" aria-pressed=${d.spAb===a} onClick=${()=>up(x=>{x.spAb=a})}>${ABN[a]}</button>`)}</div><//>`:null}
+      ${P.versatile?html`<${Choice} t="Versatile: dein zweites Origin Feat" ex=${'Menschen bekommen zusätzlich zum Feat ihres Backgrounds'+(o.B?' ('+o.B.feat+')':'')+' noch eines. Magic Initiate und Skilled darfst du doppelt nehmen, die anderen nicht.'}>
+        <${Opts} opts=${Object.keys(FEATS).map(k=>[k,k,FEATS[k].d,o.feat2dup(k)?'Hast du schon durch deinen Background.':''])} sel=${d.feat2} on=${v=>up(x=>{x.feat2=v;x.fp.sp={}})}/><//>`:null}
+    </div>`:null}`}
+
+function StepAb({d,o,up}){
+  const C=o.C,B=o.B,prio=PRIO[d.cls]||AB;
+  const suggest=()=>up(x=>{if(x.abM==='std'){x.std={};prio.forEach((a,i)=>{x.std[a]=STD[i]})}else if(x.abM==='pb'){x.pbuy={};prio.forEach((a,i)=>{x.pbuy[a]=STD[i]<8?8:STD[i]})}
+    if(B){const r=prio.filter(a=>B.ab.includes(a));x.bonus='21';x.b2=r[0];x.b1=r[1]}});
+  const setStd=(a,v)=>up(x=>{const old=x.std[a];AB.forEach(b=>{if(b!==a&&x.std[b]===v)x.std[b]=STD.includes(old)?old:''});x.std[a]=v});
+  const cell=a=>d.abM==='std'?html`<select class="in" style="width:5.2rem" aria-label=${ABN[a]} value=${STD.includes(d.std[a])?d.std[a]:''} onChange=${e=>setStd(a,e.target.value===''?'':+e.target.value)}>
+        <option value="">–</option>${STD.map(v=>html`<option key=${v} value=${v}>${v}${AB.some(b=>b!==a&&d.std[b]===v)?' (tauschen)':''}</option>`)}</select>`
+    :d.abM==='pb'?html`<${Counter} v=${o.base[a]} min=${8} max=${15} label=${ABN[a]} on=${v=>{if(v>15||v<8)return;const cost=POINT_COST[v]-POINT_COST[o.base[a]];if(cost>o.pbLeft&&v>o.base[a])return;up(x=>{x.pbuy[a]=v})}}/>`
+    :html`<${In} type="number" cls="tiny" min="3" max="20" lbl=${ABN[a]} v=${d.man[a]} on=${v=>up(x=>{x.man[a]=v})}/>`;
+  return html`<p class="lead">Sechs Attribute beschreiben, was dein Charakter körperlich und geistig draufhat. Aus jedem Wert ergibt sich ein Modifier, den du auf Würfe zählst: 10 ist Durchschnitt (+0), 14 ist gut (+2), 16 sehr gut (+3).</p>
+    <div class="rowf"><div class="seg">${[['std','Standard Array'],['pb','Point Buy'],['man','Eigene Werte']].map(([k,l])=>html`<button key=${k} type="button" aria-pressed=${d.abM===k} onClick=${()=>up(x=>{x.abM=k})}>${l}</button>`)}</div>
+      ${d.abM!=='man'&&C?html`<button class="btn s" type="button" onClick=${suggest}>Vorschlag für ${d.cls}</button>`:null}</div>
+    <p class="sm soft" style="max-width:70ch;margin-top:.6rem">${d.abM==='std'?'Verteile die Werte 15, 14, 13, 12, 10 und 8 auf die sechs Attribute. Jeder Wert kommt einmal vor.'
+      :d.abM==='pb'?html`Jedes Attribut startet bei 8. Du hast 27 Punkte, höher als 15 geht es nicht. Noch übrig: <b class=${o.pbLeft<0?'err':''}>${o.pbLeft}</b>.`
+      :'Für gewürfelte Werte oder wenn eure Spielleitung andere Werte vorgibt. Trag die Werte ohne Background-Bonus ein.'}</p>
+    <table class="abtab"><thead><tr><th>Attribut</th><th>Wert</th><th class="bon">Background</th><th>Gesamt</th><th>Mod</th></tr></thead><tbody>
+      ${AB.map(a=>html`<tr key=${a}><td><b>${ABN[a]}</b><div class="sm soft sub">${AB_DE[a]}${C&&C.prim===a?' · Hauptattribut':''}${C&&C.sv.includes(a)?' · Save':''}</div></td>
+        <td>${cell(a)}</td><td class="soft bon">${o.bon[a]?'+'+o.bon[a]:'–'}</td><td class="tot">${o.ab[a]==null?'–':o.ab[a]}${o.bon[a]?html`<small class="bon-in">+${o.bon[a]}</small>`:null}</td><td class="md">${o.ab[a]==null?'–':sg(mod(o.ab[a]))}</td></tr>`)}
+    </tbody></table>
+    ${B?html`<${Choice} t=${'Bonus durch deinen Background ('+d.bg+')'} ex=${'Dein Background erlaubt '+B.ab.map(a=>ABN[a]).join(', ')+'. Entweder +2 auf eines und +1 auf ein anderes, oder +1 auf alle drei. Kein Wert darf über 20 steigen.'}>
+      <div class="seg" style="margin-top:.6rem">${[['21','+2 und +1'],['111','+1, +1, +1']].map(([k,l])=>html`<button key=${k} type="button" aria-pressed=${d.bonus===k} onClick=${()=>up(x=>{x.bonus=k})}>${l}</button>`)}</div>
+      ${d.bonus==='21'?html`<div class="rowf" style="margin-top:.7rem"><span class="sm" style="width:3rem">+2 auf</span>${B.ab.map(a=>html`<button key=${a} type="button" class="chip" aria-pressed=${d.b2===a} onClick=${()=>up(x=>{x.b2=a;if(x.b1===a)x.b1=''})}>${ABN[a]}</button>`)}</div>
+        <div class="rowf" style="margin-top:.4rem"><span class="sm" style="width:3rem">+1 auf</span>${B.ab.map(a=>html`<button key=${a} type="button" class="chip" aria-pressed=${d.b1===a} disabled=${d.b2===a} onClick=${()=>up(x=>{x.b1=a})}>${ABN[a]}</button>`)}</div>`:null}
+    <//>`:html`<p class="hint" style="margin-top:1rem">Wähl zuerst einen Background, dann kannst du hier seinen Bonus verteilen.</p>`}`}
+
+function StepSk({d,o,up}){
+  const C=o.C,B=o.B,P=o.P;
+  if(!C||!B)return html`<p class="hint">Wähl zuerst Klasse und Background, dann siehst du hier, welche Skills du bekommst und welche du aussuchen darfst.</p>`;
+  const skillDis=(k,before)=>before.has(k)?'Hast du schon.':'';
+  return html`<p class="lead">Skills sind Dinge, in denen du geübt bist. Bei Würfen darauf zählst du deinen Proficiency Bonus (+2 auf Level 1) dazu. Tools funktionieren genauso, Sprachen kannst du einfach.</p>
+    <${Choice} t=${'Von deinem Background ('+d.bg+')'}><div class="chips" style="margin-top:.6rem">${o.bgSk.map(k=>html`<span class="chip on" key=${k}>${k}<small>${SKILL_DE[k]}</small></span>`)}</div><//>
+    <${Choice} t=${'Von deiner Klasse ('+d.cls+')'} n=${o.clsSk.length} max=${o.clsN} ex=${C.skills[1].length===18?'Barden dürfen aus allen Skills wählen.':'Wähle aus der Liste deiner Klasse.'}>
+      <${Chips} opts=${o.clsOpts.map(k=>skOpt(k,skillDis(k,o.kCls)))} sel=${o.clsSk} max=${o.clsN} on=${v=>up(x=>{x.skills=v})}/><//>
+    ${P&&P.keen?html`<${Choice} t="Keen Senses (Elf)" n=${o.keen?1:0} max=${1}><${Chips} opts=${P.keen.map(k=>skOpt(k,skillDis(k,o.kKeen)))} sel=${o.keen?[o.keen]:[]} max=${1} on=${v=>up(x=>{x.keen=v[0]||''})}/><//>`:null}
+    ${P&&P.skillful?html`<${Choice} t="Skillful (Human)" n=${o.skillful?1:0} max=${1} ex="Ein Skill deiner Wahl."><${Chips} opts=${ALLSKILLS.map(k=>skOpt(k,skillDis(k,o.kSkillful)))} sel=${o.skillful?[o.skillful]:[]} max=${1} on=${v=>up(x=>{x.skillful=v[0]||''})}/><//>`:null}
+    ${o.feats.filter(f=>f.n==='Skilled').map(f=>{const K=o.kSkilled[f.src];return html`<${Choice} key=${f.src} t=${'Skilled ('+(f.src==='bg'?d.bg:'Human')+')'} n=${o.skilled[f.src].length} max=${3} ex="Drei Skills oder Tools, beliebig gemischt.">
+      <${Chips} opts=${ALLSKILLS.map(k=>skOpt(k,skillDis(k,K.sk))).concat(ALLTOOLS.map(t=>[t,t,'Tool',K.t.includes(t)?'Hast du schon.':'']))} sel=${o.skilled[f.src]} max=${3} on=${v=>up(x=>{x.fp[f.src]=Object.assign({},x.fp[f.src],{picks:v})})}/><//>`})}
+    ${o.expN?html`<${Choice} t="Expertise (Rogue)" n=${o.exp.length} max=${o.expN} ex="In zwei deiner Skills zählt der Proficiency Bonus doppelt. Beliebt sind Stealth und Perception.">
+      <${Chips} opts=${[...o.known].sort().map(k=>skOpt(k,''))} sel=${o.exp} max=${o.expN} on=${v=>up(x=>{x.exp=v})}/><//>`:null}
+    <h2 class="h2">Tools</h2>
+    <div class="chips">${o.tCls.map(t=>html`<span class="chip on" key=${t}>${t}</span>`)}${!o.tCls.length?html`<span class="soft sm">${o.bgToolOpts?'Dein Tool vom Background wählst du im Schritt Herkunft.':'Noch keine.'}</span>`:null}</div>
+    ${o.ctoolN?html`<${Choice} t=${d.cls==='Bard'?'Drei Musikinstrumente (Bard)':'Ein Artisan\'s Tool oder Instrument (Monk)'} n=${o.ctools.length} max=${o.ctoolN}>
+      <${Chips} opts=${o.ctoolOpts.map(t=>[t,t,'',o.tCls.includes(t)?'Hast du schon.':''])} sel=${o.ctools} max=${o.ctoolN} on=${v=>up(x=>{x.ctools=v})}/><//>`:null}
+    ${o.feats.filter(f=>f.n==='Crafter'||f.n==='Musician').map(f=>{const opts=f.n==='Crafter'?TOOLS.artisan:TOOLS.music,K=o.tFeat[f.src];
+      return html`<${Choice} key=${f.src} t=${f.n+': drei '+(f.n==='Crafter'?"Artisan's Tools":'Instrumente')} n=${o.featTools[f.src].length} max=${3}>
+        <${Chips} opts=${opts.map(t=>[t,t,'',K.includes(t)?'Hast du schon.':''])} sel=${o.featTools[f.src]} max=${3} on=${v=>up(x=>{x.fp[f.src]=Object.assign({},x.fp[f.src],{tools:v})})}/><//>`})}
+    <h2 class="h2">Sprachen</h2>
+    <p class="sm soft" style="max-width:70ch">Du sprichst Common${(C.extraLang||[]).length?' und '+C.extraLang.join(', '):''}. Dazu kommen ${o.langN} Sprachen deiner Wahl${C.extraLangPick?' (eine davon durch Thieves\' Cant)':''}.</p>
+    <${Chips} opts=${LANGS.map(l=>[l,l])} sel=${o.langPicks} max=${o.langN} on=${v=>up(x=>{x.langs=v})}/>`}
+
+function StepSpl({d,o,up}){
+  const sc=o.sc;
+  if(!o.C)return html`<p class="hint">Wähl zuerst eine Klasse.</p>`;
+  if(!o.anySpells)return html`<p class="lead">${d.cls} zaubert nicht${['Barbarian','Fighter','Monk','Rogue'].includes(d.cls)?'':' auf Level 1'}. Du kannst diesen Schritt überspringen.</p>
+    <p class="sm soft" style="max-width:70ch">Magie bekommst du trotzdem, wenn du als Human das Feat Magic Initiate nimmst, einen Background mit Magic Initiate wählst (Acolyte, Guide, Sage) oder eine Spezies mit eigener Magie (Aasimar, Elf, Gnome, Tiefling).</p>`;
+  return html`<p class="lead">Cantrips kannst du so oft wirken, wie du willst. Spells des 1. Grades kosten einen Spell Slot${sc?', davon hast du auf Level 1 '+(sc.type==='pact'?'einen, er kommt nach jeder Short Rest zurück':'zwei, sie kommen nach jeder Long Rest zurück'):''}. Concentration heißt: nur ein solcher Spell gleichzeitig.</p>
+    ${sc?html`<div class="facts"><div class="fact"><small>Zauberattribut</small>${ABN[sc.ab]}</div><div class="fact"><small>Spell Save DC</small>${8+2+o.m(sc.ab)}</div><div class="fact"><small>Spell Attack</small>${sg(2+o.m(sc.ab))}</div></div>`:null}
+    ${o.spAuto.length?html`<${Choice} t="Bekommst du automatisch"><ul class="feat-list">${o.spAuto.map(x=>html`<li key=${x.n}><b>${x.n}</b> <span class="tag">${x.src}</span> ${SP[x.n][5]} ${x.note||''}</li>`)}</ul><//>`:null}
+    ${sc&&o.cN?html`<${Choice} t="Cantrips" n=${o.spC.length} max=${o.cN}><${Opts} opts=${o.cOpts.map(n=>spOpt(n,o.kSpCls))} sel=${o.spC} max=${o.cN} on=${v=>up(x=>{x.spells.c=v})}/><//>`:null}
+    ${sc?html`<${Choice} t=${sc.book?'Dein Zauberbuch':'Vorbereitete Spells des 1. Grades'} n=${o.spL.length} max=${o.lN} ex=${sc.book?'Sechs Spells stehen in deinem Zauberbuch. Vier davon hast du jeweils vorbereitet, die wählst du gleich darunter.':'Nach jeder Long Rest darfst du '+(d.cls==='Wizard'?'':'einen oder alle ')+'neu wählen. Für den Anfang reichen gute Allrounder.'}>
+      <${Opts} opts=${o.lOpts.map(n=>spOpt(n,o.kSpCls))} sel=${o.spL} max=${o.lN} on=${v=>up(x=>{x.spells.l1=v})}/><//>`:null}
+    ${sc&&sc.book&&o.spL.length?html`<${Choice} t="Davon vorbereitet" n=${o.spP.length} max=${sc.prep}><${Chips} opts=${o.spL.map(n=>[n,n])} sel=${o.spP} max=${sc.prep} on=${v=>up(x=>{x.spells.prep=v})}/><//>`:null}
+    ${Object.values(o.mi).map(x=>html`<div key=${x.src} class="detail"><h2 class="h2">Magic Initiate ${x.src==='bg'?'('+d.bg+')':'(Human)'}</h2>
+      <p class="sm">${FEATS['Magic Initiate'].d}</p>
+      ${x.fixed?html`<p class="sm soft">Spell-Liste durch deinen Background: <b>${x.list}</b>.</p>`:html`<${Choice} t="Spell-Liste"><div class="seg" style="margin-top:.6rem">${MI_LISTS.map(l=>html`<button key=${l} type="button" aria-pressed=${x.list===l} disabled=${o.mi.bg&&o.mi.bg.list===l} onClick=${()=>up(y=>{y.fp.sp=Object.assign({},y.fp.sp,{list:l,c:[],l1:''})})}>${l}</button>`)}</div><//>`}
+      <${Choice} t="Zauberattribut" ex="Meist das Attribut, mit dem du ohnehin am besten bist."><div class="seg" style="margin-top:.6rem">${SPAB.map(a=>html`<button key=${a} type="button" aria-pressed=${x.ab===a} onClick=${()=>up(y=>{y.fp[x.src]=Object.assign({},y.fp[x.src],{ab:a})})}>${ABN[a]}</button>`)}</div><//>
+      ${x.list?html`<${Choice} t="Zwei Cantrips" n=${x.c.length} max=${2}><${Opts} opts=${SPL[x.list][0].map(n=>spOpt(n,x.before))} sel=${x.c} max=${2} on=${v=>up(y=>{y.fp[x.src]=Object.assign({},y.fp[x.src],{c:v})})}/><//>
+        <${Choice} t="Ein Spell des 1. Grades" n=${x.l1?1:0} max=${1}><${Opts} opts=${SPL[x.list][1].map(n=>spOpt(n,x.before))} sel=${x.l1?[x.l1]:[]} max=${1} on=${v=>up(y=>{y.fp[x.src]=Object.assign({},y.fp[x.src],{l1:v[0]||''})})}/><//>`:null}
+    </div>`)}
+    ${o.tome?html`<div class="detail"><h2 class="h2">Pact of the Tome</h2><p class="sm">Dein Book of Shadows: drei Cantrips von beliebigen Listen und zwei Ritual-Spells des 1. Grades, die du immer vorbereitet hast.</p>
+      <${Choice} t="Drei Cantrips" n=${o.tome.c.length} max=${3}><${Opts} opts=${ALLC.map(n=>spOpt(n,o.tome.before))} sel=${o.tome.c} max=${3} on=${v=>up(y=>{y.tome.c=v})}/><//>
+      <${Choice} t="Zwei Ritual-Spells" n=${o.tome.r.length} max=${2}><${Opts} opts=${ALLR.map(n=>spOpt(n,o.tome.before))} sel=${o.tome.r} max=${2} on=${v=>up(y=>{y.tome.r=v})}/><//></div>`:null}`}
+
+function StepEq({d,o,up}){
+  const C=o.C,B=o.B;
+  if(!C||!B)return html`<p class="hint">Wähl zuerst Klasse und Background, dann siehst du hier deine Startausrüstung.</p>`;
+  const list=items=>items.map(([n,q])=>(q>1?q+' ':'')+n).join(', ');
+  const eq=eqItems(d,o),ac=acOf(d,o,eq.items),weap=eq.items.filter(i=>WEAPONS[i.n]).map(i=>i.n);
+  return html`<p class="lead">Du startest entweder mit dem Paket deiner Klasse und deines Backgrounds oder nimmst das Geld und kaufst selbst ein. Für den Anfang ist das Paket fast immer die bessere Wahl.</p>
+    <${Choice} t=${'Klasse ('+d.cls+')'}><div class="pick-grid" style="margin-top:.6rem">${Object.keys(C.eq).map(k=>{const x=C.eq[k];return html`<button key=${k} type="button" class="pick" aria-pressed=${d.eqC===k} onClick=${()=>up(y=>{y.eqC=k})}>
+      <b>Option ${k}${x.label?': '+x.label:''}</b><span class="sm">${x.items.length?list(x.items)+', '+x.gp+' GP':'Nur Gold: '+x.gp+' GP. Ausrüstung kaufst du selbst.'}</span></button>`})}</div><//>
+    <${Choice} t=${'Background ('+d.bg+')'}><div class="pick-grid" style="margin-top:.6rem">
+      <button type="button" class="pick" aria-pressed=${d.bgEq!=='B'} onClick=${()=>up(y=>{y.bgEq='A'})}><b>Option A</b><span class="sm">${list(B.eq)}, ${B.gp} GP</span></button>
+      <button type="button" class="pick" aria-pressed=${d.bgEq==='B'} onClick=${()=>up(y=>{y.bgEq='B'})}><b>Option B</b><span class="sm">Nur Gold: 50 GP.</span></button></div><//>
+    <div class="facts" style="margin-top:1.4rem"><div class="fact"><small>Armor Class damit</small>${ac.ac} <span class="soft sm">(${ac.note})</span></div>
+      <div class="fact"><small>Waffen</small>${weap.length?weap.join(', '):'keine'}</div><div class="fact"><small>Gold</small>${eq.gp} GP</div></div>
+    ${Object.keys(PACKS).some(p=>eq.items.some(i=>i.n===p))?html`<dl class="kv sm">${Object.keys(PACKS).filter(p=>eq.items.some(i=>i.n===p)).map(p=>html`<dt key=${p+'t'}>${p}</dt><dd key=${p}>${PACKS[p]}</dd>`)}</dl>`:null}`}
+
+function StepDet({d,o,up}){
+  const f=(k,l,ph)=>html`<${F} l=${l}><${In} id=${'b-'+k} v=${d[k]} ph=${ph} on=${v=>up(x=>{x[k]=v})}/><//>`,a=(k,l,ph,r)=>html`<${F} l=${l} wide=${true}><${Area} id=${'b-'+k} rows=${r||2} v=${d[k]} ph=${ph} on=${v=>up(x=>{x[k]=v})}/><//>`;
+  return html`<p class="lead">Wer ist dein Charakter? Name und Kurzbeschreibung sieht die ganze Gruppe, den Rest nur du und die Spielleitung. Alles lässt sich später im Bogen ändern, das Bild lädst du dort hoch.</p>
+    <div class="fg" style="max-width:46rem">
+      ${f('name','Name','')}
+      <${F} l="Alignment"><select class="in" id="b-align" value=${d.align} onChange=${e=>{const v=e.target.value;up(x=>{x.align=v})}}><option value="">–</option>${ALIGN.map(v=>html`<option key=${v} value=${v}>${v}</option>`)}</select><//>
+      ${f('age','Alter','')}${f('height','Größe und Statur','1,78 m, kräftig')}
+      ${a('look','Kurzbeschreibung für die Gruppe','Woran erkennt man deinen Charakter? Zwei, drei Sätze.',3)}
+      ${a('traits','Personality Traits','Wie benimmt sich dein Charakter?')}${a('ideals','Ideals','Woran glaubt er?')}
+      ${a('bonds','Bonds','Wer oder was ist ihm wichtig?')}${a('flaws','Flaws','Was ist seine Schwäche?')}
+      ${a('story','Hintergrundgeschichte','',5)}
+    </div>`}
+
+function StepEnd({d,o,miss,go,make}){
+  const s=buildSheet(d),ready=!miss.length,base=!!(o.C&&o.B&&o.P);
+  return html`${ready?html`<p class="lead">Alles ausgewählt. So sieht dein Bogen aus. Wenn du ihn anlegst, kannst du ihn jederzeit weiter bearbeiten.</p>`
+      :html`<div class="miss"><h3 class="h3">Noch offen</h3><ul>${miss.map(([i,t],j)=>html`<li key=${j}><button type="button" class="linkbtn" onClick=${()=>go(i)}>${BSTEPS[i][1]}</button>: ${t}</li>`)}</ul></div>`}
+    <div class="rowf" style="margin:1.2rem 0">${ready?html`<button class="btn solid" type="button" onClick=${make}><${Ic} n="check"/>Charakter anlegen</button>`
+      :base?html`<${Confirm} label="Trotzdem anlegen" cls="btn" ask="Offenes kannst du später im Bogen von Hand eintragen." yes="Anlegen" onYes=${make}/>`:null}</div>
+    ${base?html`<div class="preview"><span class="lbl">Vorschau</span><${Sheet} s=${normSheet(s)} uid=${S.uid} ro=${true} set=${()=>{}}/></div>`:null}`}
+
+function Builder({onExit}){
+  const [d,setD]=useState(()=>normDraft(LS.get(draftKey(),null)));
+  const up=fn=>setD(p=>{const n=clone(p);fn(n);LS.set(draftKey(),n);return n});
+  const o=derive(d),miss=missing(d,o),k=BSTEPS[d.step][0];
+  const go=i=>{up(x=>{x.step=clamp(i,0,BSTEPS.length-1);x.far=Math.max(x.far||0,x.step)});window.scrollTo(0,0)};
+  const make=()=>{const s=buildSheet(d);if(!s.name)s.name='Namenlos';LS.set(draftKey(),null);createSheet(s);ui({edit:false});toast(s.name+' ist angelegt. Bild und Feinschliff gehen jederzeit über Bearbeiten.')};
+  const here=miss.filter(m=>m[0]===d.step),nav=useRef(null);
+  useEffect(()=>{const n=nav.current,b=n&&n.querySelector('[aria-current="step"]');if(b)n.scrollLeft=Math.max(0,b.offsetLeft-n.offsetLeft-(n.clientWidth-b.offsetWidth)/2)},[d.step]);
+  const P={d,o,up};
+  return html`<div class="builder">
+    <div class="rowf"><button class="btn quiet" type="button" onClick=${onExit}><${Ic} n="back"/>Zurück zur Auswahl</button><span class="sm soft right">Dein Entwurf wird in diesem Browser gespeichert.</span></div>
+    <h1 class="h1" style="margin-top:.8rem">${d.name.trim()||'Neuer Charakter'}</h1>
+    <p class="sm soft" style="margin-top:.3rem">${[d.cls,raceName(d),d.bg].filter(Boolean).join(' · ')||'Regeln von 2024 · Level 1'}</p>
+    <nav class="bsteps" aria-label="Schritte" ref=${nav}>${BSTEPS.map(([sk,l],i)=>{const ok=i<=d.far&&!miss.some(m=>m[0]===i);
+      return html`<button key=${sk} type="button" class=${ok&&i!==d.step?'done':''} aria-current=${i===d.step?'step':null} onClick=${()=>go(i)}><i>${ok&&i!==d.step?'✓':i+1}</i>${l}</button>`})}</nav>
+    ${k==='cls'?html`<${StepCls} ...${P}/>`:k==='bg'?html`<${StepBg} ...${P}/>`:k==='sp'?html`<${StepSp} ...${P}/>`:k==='ab'?html`<${StepAb} ...${P}/>`
+      :k==='sk'?html`<${StepSk} ...${P}/>`:k==='spl'?html`<${StepSpl} ...${P}/>`:k==='eq'?html`<${StepEq} ...${P}/>`:k==='det'?html`<${StepDet} ...${P}/>`
+      :html`<${StepEnd} ...${P} miss=${miss} go=${go} make=${make}/>`}
+    ${k!=='end'?html`<div class="bnav">
+      <button class="btn" type="button" disabled=${d.step===0} onClick=${()=>go(d.step-1)}><${Ic} n="back"/>Zurück</button>
+      ${here.length?html`<span class="sm soft grow">Noch offen: ${here.map(m=>m[1]).join(' ')}</span>`:html`<span class="sm ok grow">Dieser Schritt ist fertig.</span>`}
+      <button class="btn solid" type="button" onClick=${()=>go(d.step+1)}>Weiter: ${BSTEPS[d.step+1][1]}</button></div>`:null}
+  </div>`}
 
 /* ================= group ================= */
 function PCard({uid}){
