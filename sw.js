@@ -1,5 +1,5 @@
 // Keeps the app usable on a weak connection: always tries the network first, falls back to the last copy.
-const CACHE='kampagnenbuch-da6e89cb19';
+const CACHE='kampagnenbuch-0e4b3bc809';
 self.addEventListener('install',()=>self.skipWaiting());
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
 self.addEventListener('fetch',e=>{

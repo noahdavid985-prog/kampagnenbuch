@@ -212,6 +212,7 @@ function resolvePeople(){
   S.user.profiles(Array.from(ids)).then(p=>{S.profiles=p||{};emit()}).catch(()=>{})}
 function afterChars(){
   resolvePeople();
+  const mine=S.chars[S.uid];if(mine&&num(mine.pv)>num(S.cardX.pv))S.cardX.pv=mine.pv; // the game master may have set my picture
   Object.keys(S.chars).forEach(id=>{
     const pv=S.chars[id].pv||0,have=S.portraits[id];
     if(pv&&(!have||have.v!==pv)){
@@ -227,6 +228,11 @@ function startSubs(){
   listen(db.collection('unlocks'),q=>{S.unlocks=byId(q);emit()});
   listen(db.collection('inbox/'+u+'/items'),q=>{S.inbox=rows(q);emit()});
   listen(db.collection('board'),q=>{S.board=rows(q);resolvePeople();emit()});
+  listen(db.doc('sheets/'+u),s=>{ // my sheet changed elsewhere: the game master handed me a character, or another device of mine saved
+    if(!s.exists||sheetDirty||S.saving||(s.metadata&&s.metadata.hasPendingWrites))return;
+    const d=normSheet(clone(s.data()));if(S.sheet&&canon(d)===canon(S.sheet))return;
+    const was=S.sheet;S.sheet=d;emit();
+    if(!was||was.name!==d.name)toast((d.name||'Ein Charakter')+' liegt jetzt in deinem Bogen.')});
   if(S.isGM){
     listen(db.collection('gm/store/items'),q=>{S.gmItems=rows(q);emit()});
     listen(db.collection('gm/store/maps'),q=>{S.gmMaps=rows(q);emit()});
@@ -264,6 +270,16 @@ function flushSheet(){
     if(c==='unavailable'||c==='deadline-exceeded'||c==='aborted'){clearTimeout(sheetT);sheetT=setTimeout(flushSheet,6000)}})}
 function touchNotes(fn){if(!S.notes)return;if(fn)fn(S.notes);notesDirty=true;clearTimeout(notesT);notesT=setTimeout(flushNotes,900);emit()}
 function flushNotes(){clearTimeout(notesT);if(!notesDirty||!S.notes||!S.db)return;notesDirty=false;S.db.doc('data/users/'+S.uid+'/notes').set(clone(S.notes)).catch(e=>{notesDirty=true;toast('Dein Notizzettel konnte nicht gespeichert werden.'+why(e),'err')})}
+const canon=x=>JSON.stringify(x,(k,v)=>v&&typeof v==='object'&&!Array.isArray(v)?Object.keys(v).sort().reduce((o,kk)=>{o[kk]=v[kk];return o},{}):v);
+async function gmAssign(uid,sheet,portrait){ // the game master puts a finished character into a player's sheet
+  const s=normSheet(clone(sheet));delete s.tpl;delete s.plays;
+  const old=S.chars[uid]||{};let pv=num(old.pv);
+  if(portrait){const img=await loadImg(portrait),d=jpegUnder(coverCanvas(img,400,500),90000,0.84).d;pv=Date.now();
+    await S.db.doc('chars/'+uid+'/media/portrait').set({d,v:pv});S.portraits[uid]={v:pv,d}}
+  await S.db.doc('sheets/'+uid).set(s);
+  await S.db.doc('chars/'+uid).set(cardOf(s,{pv,joined:old.joined||Date.now(),init:null}));
+  if(uid===S.uid){clearTimeout(sheetT);sheetDirty=false;S.sheet=s;S.cardX.pv=pv}
+  emit()}
 function createSheet(s){S.sheet=normSheet(clone(s));delete S.sheet.tpl;delete S.sheet.plays;sheetDirty=true;flushSheet();ui({tab:'sheet',edit:true,sub:'kampf'});window.scrollTo(0,0)}
 async function deleteSheet(){
   clearTimeout(sheetT);sheetDirty=false;
@@ -1929,12 +1945,40 @@ function GmSession(){
     <h2 class="h2">Nächste Session</h2>
     <div class="fg" style="max-width:46rem"><${F} l="Datum und Uhrzeit"><input class="in" id="cp-next" type="datetime-local" value=${toLocal(c.next)} onChange=${e=>{const t=e.target.value?new Date(e.target.value).getTime():0;up({next:isFinite(t)?t:0})}}/><//>
       <${F} l="Notiz dazu"><${Late} id="cp-nextnote" v=${c.nextNote} ph="Wir treffen uns im Voice-Channel" on=${v=>up({nextNote:v})}/><//></div>`}
+/* characters prepared outside the app (a file with finished sheets and pictures) go to the players here */
+function GmImport(){
+  const [list,setList]=useState(null),[to,setTo]=useState({}),[busy,setBusy]=useState(''),[done,setDone]=useState({});
+  const people=Array.from(new Set(Object.keys(People.map).concat(Object.keys(S.chars),Object.keys(S.sheets))));
+  const who=u=>String((People.map[u]||{}).name||'').trim()||nameOf(u);
+  const read=async f=>{try{const j=JSON.parse(await f.text()),arr=Array.isArray(j)?j:j.chars;
+      if(!Array.isArray(arr)||!arr.length)throw new Error('leer');
+      const ok=arr.filter(c=>c&&c.sheet&&typeof c.sheet==='object').map((c,i)=>({i,sheet:normSheet(c.sheet),portrait:typeof c.portrait==='string'&&/^data:image\//.test(c.portrait)?c.portrait:'',hint:String(c.player||'')}));
+      if(!ok.length)throw new Error('leer');
+      const guess={};ok.forEach(c=>{const h=c.hint.toLowerCase();const u=h&&people.find(p=>who(p).toLowerCase()===h||who(p).toLowerCase().split(' ')[0]===h.split(' ')[0]);if(u)guess[c.i]=u});
+      setList(ok);setTo(guess);setDone({})}
+    catch(e){toast('Diese Datei enthält keine Charaktere, die ich lesen kann.','err')}};
+  const give=async c=>{const u=to[c.i];if(!u)return;setBusy(String(c.i));
+    try{await gmAssign(u,c.sheet,c.portrait);setDone(Object.assign({},done,{[c.i]:u}));toast((c.sheet.name||'Der Charakter')+' gehört jetzt '+who(u)+'.')}
+    catch(e){oops('Das Zuweisen')(e)}setBusy('')};
+  return html`<div class="box plain" style="margin:0 0 1.4rem;max-width:60rem"><h2 class="h2" style="margin-top:0">Fertige Charaktere übernehmen</h2>
+    <p class="sm" style="max-width:66ch">Lade die Charakter-Datei, die Claude für dich gebaut hat. Dann wählst du für jeden Charakter, wem er gehört. Er liegt sofort im Bogen des Spielers, mit Bild in der Gruppenansicht. Wer nicht in der Liste steht, muss sich zuerst einmal in der App anmelden.</p>
+    <${FileBtn} label=${list?'Andere Datei wählen':'Charakter-Datei wählen'} icon="sheet" accept=".json,application/json" onFile=${read}/>
+    ${list?html`<div class="stack" style="margin-top:1rem">${list.map(c=>{const u=to[c.i],has=u&&S.sheets[u]&&done[c.i]!==u;
+      return html`<div class="imp-row" key=${c.i}>
+        <div class=${'port sm'+(c.portrait?'':' none')}>${c.portrait?html`<img src=${c.portrait} alt=""/>`:html`<span aria-hidden="true">${initials(c.sheet.name)}</span>`}</div>
+        <div class="grow"><b>${c.sheet.name||'Namenlos'}</b><div class="sm soft">${clsLine(c.sheet)}${c.hint?' · für '+c.hint:''}</div>
+          ${done[c.i]?html`<div class="sm ok">Liegt bei ${who(done[c.i])}.</div>`:null}</div>
+        <select class="in" style="width:auto;min-width:11rem" aria-label=${'Spieler für '+(c.sheet.name||'den Charakter')} value=${u||''} onChange=${e=>setTo(Object.assign({},to,{[c.i]:e.target.value}))}>
+          <option value="">Spieler wählen</option>${people.map(p=>html`<option key=${p} value=${p}>${who(p)}${S.sheets[p]?' (hat schon '+(S.sheets[p].name||'einen Charakter')+')':''}</option>`)}</select>
+        ${has?html`<${Confirm} label="Zuweisen" cls="btn s solid" ask=${'Ersetzt '+(S.sheets[u].name||'den Bogen')+'.'} yes="Ersetzen" onYes=${()=>give(c)}/>`
+          :html`<button class="btn s solid" disabled=${!u||busy===String(c.i)} onClick=${()=>give(c)}>${busy===String(c.i)?'Speichert …':u&&done[c.i]===u?'Nochmal':'Zuweisen'}</button>`}</div>`})}</div>`:null}
+  </div>`}
 function GmPlayers(){
   const ids=Array.from(new Set(Object.keys(S.chars).concat(Object.keys(S.sheets)))),cur=S.ui.gmSheet&&S.sheets[S.ui.gmSheet]?S.ui.gmSheet:'';
   const kick=async u=>{try{await S.db.doc('sheets/'+u).delete();await S.db.doc('chars/'+u+'/media/portrait').delete();await S.db.doc('chars/'+u).delete();if(S.ui.gmSheet===u)ui({gmSheet:''})}catch(e){oops('Das Entfernen')(e)}};
   if(cur){const s=normSheet(clone(S.sheets[cur]));return html`<button class="btn quiet" onClick=${()=>ui({gmSheet:''})}><${Ic} n="back"/>Alle Spieler</button>
     <p class="sm soft" style="margin:.8rem 0">Bogen von ${nameOf(cur)}, nur zum Lesen. Änderungen macht der Spieler selbst.</p><${Sheet} key=${cur} s=${s} uid=${cur} ro=${true} set=${()=>{}}/>`}
-  return html`<p class="lead">Alle, die das Kampagnenbuch geöffnet haben, mit den Werten, die du am häufigsten brauchst.</p>
+  return html`<p class="lead">Alle, die das Kampagnenbuch geöffnet haben, mit den Werten, die du am häufigsten brauchst.</p><${GmImport}/>
     ${!ids.length?html`<p class="empty">Noch war niemand da. Schick deinen Spielern die Adresse der App (unter Session).</p>`:html`<div class="scrollx"><table class="roster">
       <thead><tr><th>Spieler</th><th>Charakter</th><th>AC</th><th>HP</th><th>Passive Perc.</th><th>Init</th><th></th></tr></thead>
       <tbody>${ids.map(u=>{const raw=S.sheets[u],s=raw?normSheet(clone(raw)):null,c=S.chars[u]||{};return html`<tr key=${u}><td><${Who} uid=${u}/></td>
