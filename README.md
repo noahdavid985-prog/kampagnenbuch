@@ -7,4 +7,4 @@ Es läuft als Web-App im Browser und lässt sich auf Mac, Windows und dem Handy 
 - Wer was lesen und schreiben darf, regeln die Firestore-Sicherheitsregeln im Firebase-Projekt.
 - Die Seite selbst wird über GitHub Pages aus diesem Repository ausgeliefert.
 
-Bibliotheken: Preact und htm (MIT), TweetNaCl (Public Domain), Firebase JS SDK 10.12.2 (Apache 2.0).
+Bibliotheken: Preact und htm (MIT), TweetNaCl (Public Domain), Firebase JS SDK 10.12.2 (Apache 2.0), jsPDF 4.2.1 (MIT). Schriften im PDF: Outfit und Marcellus (SIL Open Font License).

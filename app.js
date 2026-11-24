@@ -284,6 +284,12 @@ function createSheet(s){S.sheet=normSheet(clone(s));delete S.sheet.tpl;delete S.
 async function deleteSheet(){
   clearTimeout(sheetT);sheetDirty=false;
   try{await S.db.doc('sheets/'+S.uid).delete();await S.db.doc('chars/'+S.uid+'/media/portrait').delete();S.cardX.pv=0;S.cardX.init=null;await S.db.doc('chars/'+S.uid).set({joined:S.cardX.joined||Date.now()});S.sheet=null;delete S.portraits[S.uid];ui({edit:false})}catch(e){oops('Das Löschen')(e)}}
+async function gmSetPortrait(uid,file){ // the game master puts a picture (or a placeholder) on a player's character
+  try{const d=await pickPortrait(file),v=Date.now(),old=Object.assign({},S.chars[uid]||{}),raw=S.sheets[uid];delete old.id;
+    await S.db.doc('chars/'+uid+'/media/portrait').set({d,v});
+    await S.db.doc('chars/'+uid).set(Object.keys(old).length&&old.joined?Object.assign(old,{pv:v}):raw?cardOf(normSheet(clone(raw)),{pv:v,joined:old.joined||Date.now(),init:old.init||null}):{joined:Date.now(),pv:v});
+    S.portraits[uid]={v,d};if(uid===S.uid)S.cardX.pv=v;emit();toast('Das Bild ist eingesetzt.')}
+  catch(e){oops('Das Bild')(e)}}
 async function setPortrait(file){
   try{const d=await pickPortrait(file),v=Date.now();await S.db.doc('chars/'+S.uid+'/media/portrait').set({d,v});S.cardX.pv=v;S.portraits[S.uid]={v,d};sheetDirty=true;flushSheet();emit()}
   catch(e){toast('Das Bild konnte nicht übernommen werden.'+why(e),'err')}}
@@ -365,7 +371,8 @@ const ICONS={
   eye:'<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.6"/>',
   plus:'<path d="M12 5v14M5 12h14"/>',
   pin:'<path d="M12 21s6-5.6 6-10.5A6 6 0 0 0 6 10.5C6 15.4 12 21 12 21z"/><circle cx="12" cy="10.5" r="2"/>',
-  back:'<path d="M14 6l-6 6 6 6"/>'};
+  back:'<path d="M14 6l-6 6 6 6"/>',
+  down:'<path d="M12 4v11M7 10.5l5 5 5-5M5 20h14"/>'};
 function Ic({n}){return html`<svg class="ic" viewBox="0 0 24 24" aria-hidden="true" dangerouslySetInnerHTML=${{__html:ICONS[n]||''}}></svg>`}
 function Lantern(){return html`<svg viewBox="0 0 20 26" aria-hidden="true"><path d="M6 10h8v12H6z" fill="var(--paper-2)" stroke="var(--ink)" stroke-width="1.4"/><path d="M4.5 22h11M10 10V7.6" stroke="var(--ink)" stroke-width="1.4" stroke-linecap="round"/><path d="M10 1.2c2.3 2.2 2.3 4.2 0 6-2.3-1.8-2.3-3.8 0-6z" fill="var(--flame)"/><circle cx="10" cy="16" r="2.2" fill="var(--flame)"/></svg>`}
 function F({l,wide,children}){return html`<label class=${'fl'+(wide?' wide':'')}><span>${l}</span>${children}</label>`}
@@ -401,11 +408,11 @@ function FileBtn({label,cls,onFile,icon,accept}){
   const ref=useRef(null);
   return html`<button type="button" class=${cls||'btn'} onClick=${()=>ref.current&&ref.current.click()}>${icon?html`<${Ic} n=${icon}/>`:null}${label}</button>
     <input type="file" accept=${accept||'image/*'} hidden ref=${ref} onChange=${e=>{const f=e.target.files&&e.target.files[0];e.target.value='';if(f)onFile(f)}}/>`}
-function PortraitPick({uid,name}){
+function PortraitPick({uid,name,onFile,label}){
   const ref=useRef(null),p=S.portraits[uid],d=p&&p.d;
-  return html`<button type="button" class="port" aria-label="Bild auswählen" title="Bild auswählen" onClick=${()=>ref.current&&ref.current.click()}>
+  return html`<button type="button" class="port" aria-label=${label||'Bild auswählen'} title=${label||'Bild auswählen'} onClick=${()=>ref.current&&ref.current.click()}>
       ${d?html`<img src=${d} alt=""/>`:html`<span aria-hidden="true">${initials(name)}</span>`}<span class="cam"><${Ic} n="cam"/></span></button>
-    <input type="file" accept="image/*" hidden ref=${ref} onChange=${e=>{const f=e.target.files&&e.target.files[0];e.target.value='';if(f)setPortrait(f)}}/>`}
+    <input type="file" accept="image/*" hidden ref=${ref} onChange=${e=>{const f=e.target.files&&e.target.files[0];e.target.value='';if(f)(onFile||setPortrait)(f)}}/>`}
 function Pic({path,v,kb,alt}){
   if(!v)return null;const d=media(path,v,kb);
   return d?html`<img src=${d} alt=${alt||''}/>`:d===''?html`<p class="soft sm">Bild lädt …</p>`:null}
@@ -527,7 +534,7 @@ function RestDlg({s,set,close}){
     <div class="box plain"><h3 class="h3">Long Rest</h3><p class="sm" style="margin:.3rem 0 .6rem">Acht Stunden. Alle Hit Points, Spell Slots und Features sind wieder da, dazu ${half} ${half>1?'Hit Dice':'Hit Die'}.</p>
       <button class="btn" onClick=${()=>{set(restLong);close();toast('Long Rest. Alles wieder aufgefüllt.')}}>Long Rest nehmen</button></div></div><//>`}
 
-function Sheet({s,uid,edit,ro,set}){
+function Sheet({s,uid,edit,ro,set,gm,nopdf}){
   const e=!!edit&&!ro,[dlg,setDlg]=useState(''),[sub,setSub]=useState(ro?'kampf':(S.ui.sub||'kampf'));
   const pick=v=>{setSub(v);if(!ro)ui({sub:v})};
   const L=lvlOf(s),hp=num(s.hp),hpMax=Math.max(1,num(s.hpMax)),pct=clamp(hp/hpMax*100,0,100);
@@ -646,11 +653,12 @@ function Sheet({s,uid,edit,ro,set}){
 
   return html`
     <div class="sh-head">
-      ${ro?html`<${Portrait} uid=${uid} name=${s.name}/>`:html`<${PortraitPick} uid=${uid} name=${s.name}/>`}
+      ${ro?(gm?html`<${PortraitPick} uid=${uid} name=${s.name} label="Bild einsetzen" onFile=${f=>gmSetPortrait(uid,f)}/>`:html`<${Portrait} uid=${uid} name=${s.name}/>`):html`<${PortraitPick} uid=${uid} name=${s.name}/>`}
       <div class="sh-id"><h1 class="h1">${s.name||'Namenlos'}</h1><div class="idtags">${s.cls?html`<span class="tag big amber">${s.cls}${s.sub?' · '+s.sub:''}</span>`:html`<span class="tag big">Noch ohne Class</span>`}<span class="tag big violet">Level ${L}</span>${s.race?html`<span class="tag big sky">${s.race}</span>`:null}${s.bg?html`<span class="tag big">${s.bg}</span>`:null}</div></div>
-      ${ro?null:html`<div class="sh-btns">
+      ${ro?(gm||!nopdf?html`<div class="sh-btns">${gm?html`<${FileBtn} label="Bild einsetzen" icon="cam" onFile=${f=>gmSetPortrait(uid,f)}/>`:null}${nopdf?null:html`<${PdfBtn} list=${()=>[{s,uid,player:pdfWho(uid)}]}/>`}</div>`:null)
+        :html`<div class="sh-btns">
         <button class=${'btn'+(e?' solid':' prime')} aria-pressed=${e} onClick=${()=>ui({edit:!e})}><${Ic} n=${e?'check':'edit'}/>${e?'Fertig':'Bearbeiten'}</button>
-        <button class="btn" onClick=${()=>setDlg('lvl')}>Level up</button><button class="btn" onClick=${()=>setDlg('rest')}>Rast</button></div>`}
+        <button class="btn" onClick=${()=>setDlg('lvl')}>Level up</button><button class="btn" onClick=${()=>setDlg('rest')}>Rast</button><${PdfBtn} list=${()=>[{s,uid,player:pdfWho(uid)}]}/></div>`}
     </div>
     ${basics}
     <div class="vit">
@@ -1486,7 +1494,7 @@ function StepEnd({d,o,miss,go,make}){
       :html`<div class="miss"><h3 class="h3">Noch offen</h3><ul>${miss.map(([i,t],j)=>html`<li key=${j}><button type="button" class="linkbtn" onClick=${()=>go(i)}>${BSTEPS[i][1]}</button>: ${t}</li>`)}</ul></div>`}
     <div class="rowf" style="margin:1.2rem 0">${ready?html`<button class="btn solid" type="button" onClick=${make}><${Ic} n="check"/>Charakter anlegen</button>`
       :base?html`<${Confirm} label="Trotzdem anlegen" cls="btn" ask="Offenes kannst du später im Bogen von Hand eintragen." yes="Anlegen" onYes=${make}/>`:null}</div>
-    ${base?html`<div class="preview"><span class="lbl">Vorschau</span><${Sheet} s=${normSheet(s)} uid=${S.uid} ro=${true} set=${()=>{}}/></div>`:null}`}
+    ${base?html`<div class="preview"><span class="lbl">Vorschau</span><${Sheet} s=${normSheet(s)} uid=${S.uid} ro=${true} nopdf=${true} set=${()=>{}}/></div>`:null}`}
 
 function Builder({onExit}){
   const [d,setD]=useState(()=>normDraft(LS.get(draftKey(),null)));
@@ -1817,6 +1825,191 @@ function MapEditor(){
           ${newBox}
         </aside></div>`}`}
 
+/* ================= character sheets as PDF =================
+   jsPDF and the two fonts load on the first download only. Light colours for paper; the layout flows over
+   as many A4 pages as a sheet needs, long texts in two columns. Several sheets can go into one file. */
+let pdfP=null;
+const loadJs=src=>new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=()=>res();s.onerror=()=>rej(new Error('load '+src));document.head.appendChild(s)});
+function pdfReady(){
+  if(!pdfP){const v='?v='+(window.HM_LIBV||'1');
+    pdfP=Promise.all([window.jspdf?0:loadJs('lib/jspdf.umd.min.js'+v),window.HM_PDF_FONTS?0:loadJs('lib/pdf-fonts.js'+v)])
+      .then(()=>{if(!window.jspdf||!window.HM_PDF_FONTS)throw new Error('pdf lib missing');return window.jspdf.jsPDF})
+      .catch(e=>{pdfP=null;throw e})}
+  return pdfP}
+let pdfCps=null;
+function pdfClean(t){ // only characters the embedded fonts can draw
+  if(!pdfCps){pdfCps=new Set();String(window.HM_PDF_FONTS.cps).split(',').forEach(r=>{const [a,b]=r.split('-').map(Number);for(let i=a;i<=(b||a);i++)pdfCps.add(i)})}
+  const rep={'\t':' ',' ':' ',' ':' ',' ':' ','‐':'-','‑':'-','−':'-','●':'•','→':'->','←':'<-','≤':'<=','≥':'>='};
+  let o='';for(const ch of String(t==null?'':t).normalize('NFC').replace(/\r/g,'')){
+    const c=ch.codePointAt(0);if(c===10||pdfCps.has(c)){o+=ch;continue}
+    if(rep[ch]!=null){o+=Array.from(rep[ch]).filter(x=>pdfCps.has(x.codePointAt(0))).join('');continue}
+    const base=ch.normalize('NFD').replace(/[̀-ͯ]/g,'');if(base&&Array.from(base).every(x=>pdfCps.has(x.codePointAt(0)))){o+=base;continue}
+    o+='?'}
+  return o}
+const PDFC={ink:'#1C2A31',soft:'#5B6B73',faint:'#8C989E',rule:'#D4DBDE',panel:'#F6F3EC',amber:'#B07015',mint:'#1D8469',coral:'#B94B37',violet:'#6450BA'};
+const A4W=210,A4H=297,PM=14,PCW=A4W-2*PM,PTOP=15,PBOT=A4H-17,LHF=1.3;
+const pdfWho=uid=>{const n=String((People.map[uid]||{}).name||'').trim()||nameOf(uid);return n==='Jemand'?'':n};
+/* file names stay plain ASCII: some systems drop a download name with umlauts and call the file "download" */
+const pdfFile=n=>String(n||'Charakter').replace(/Ä/g,'Ae').replace(/Ö/g,'Oe').replace(/Ü/g,'Ue').replace(/ä/g,'ae').replace(/ö/g,'oe').replace(/ü/g,'ue').replace(/ß/g,'ss')
+  .normalize('NFD').replace(/[^\x20-\x7e]/g,'').replace(/[\\/:*?"<>|]+/g,'').replace(/\s+/g,' ').trim().slice(0,80)||'Charakter';
+const restDe=r=>r==='short'?'Short Rest':r==='long'?'Long Rest':'';
+
+function pdfSheet(doc,raw,uid,opt){
+  const s=normSheet(clone(raw)),L=lvlOf(s),PB=pb(s);
+  let y=PTOP;
+  const lh=pt=>pt*0.3528*LHF;
+  const font=(f,pt,col)=>{doc.setFont(f==='head'?'Marcellus':'Outfit',f==='head'?'normal':f);doc.setFontSize(pt);doc.setTextColor(col||PDFC.ink)};
+  const text=(t,x,yy,o)=>doc.text(Array.isArray(t)?t:pdfClean(t),x,yy,Object.assign({baseline:'top'},o||{}));
+  const wrap=(t,w)=>doc.splitTextToSize(pdfClean(t),w);
+  const page=()=>{doc.addPage();y=PTOP;opt.pages.push(doc.internal.getNumberOfPages())};
+  const need=h=>{if(y+h>PBOT)page()};
+  const fitPt=(t,max,w,f)=>{let pt=max;font(f||'head',pt);while(pt>7&&doc.getTextWidth(pdfClean(t))>w){pt-=.5;font(f||'head',pt)}return pt};
+  const rr=(x,yy,w,h,fill)=>{doc.setDrawColor(PDFC.rule);doc.setLineWidth(.3);if(fill){doc.setFillColor(fill);doc.roundedRect(x,yy,w,h,1.8,1.8,'FD')}else doc.roundedRect(x,yy,w,h,1.8,1.8,'S')};
+  const cap=(t,x,yy,o,col)=>{font('medium',6.2,col||PDFC.soft);text(String(t).toUpperCase(),x,yy,Object.assign({charSpace:.25},o||{}))};
+  const mark=(x,yy,lvl)=>{doc.setLineWidth(.3);if(lvl){doc.setFillColor(PDFC.amber);doc.setDrawColor(PDFC.amber);doc.circle(x,yy,.95,'F');if(lvl>1)doc.circle(x,yy,1.6,'S')}else{doc.setDrawColor(PDFC.faint);doc.circle(x,yy,.95,'S')}};
+  const sec=(t,sub,after)=>{need(12+(after||0));y+=2.5;font('head',13.5);text(t,PM,y);
+    if(sub){const w=doc.getTextWidth(pdfClean(t));font('normal',8,PDFC.soft);text(sub,PM+w+3,y+2)}
+    y+=lh(13.5)+.2;doc.setDrawColor(PDFC.amber);doc.setLineWidth(.45);doc.line(PM,y,PM+PCW,y);y+=2.8};
+
+  /* ---- header with picture ---- */
+  const pic=S.portraits[uid]&&S.portraits[uid].d,pw=30,ph=37.5,px=A4W-PM-pw,y0=y,tw=PCW-pw-6;
+  cap('Hollowmere · Charakterbogen',PM,y,null,PDFC.amber);
+  const npt=fitPt(s.name||'Namenlos',26,tw);font('head',npt);text(s.name||'Namenlos',PM,y+4.6);
+  let hy=y+4.6+lh(npt);
+  font('normal',10.5,PDFC.soft);
+  const idl=wrap([[s.cls||'Ohne Class',s.sub].filter(Boolean).join(' · '),'Level '+L,s.race,s.bg,s.align].filter(Boolean).join('   ·   '),tw);
+  text(idl,PM,hy+.6);hy+=.6+idl.length*lh(10.5);
+  const by=[opt.player?'Gespielt von '+opt.player:'',num(s.xp)?s.xp+' XP':''].filter(Boolean).join(' · ');
+  if(by){font('normal',8.5,PDFC.faint);text(by,PM,hy+1);hy+=1+lh(8.5)}
+  if(pic){try{doc.addImage(pic,'JPEG',px,y0,pw,ph,'p-'+uid,'FAST')}catch(e){}doc.setDrawColor(PDFC.rule);doc.setLineWidth(.3);doc.rect(px,y0,pw,ph,'S')}
+  else{rr(px,y0,pw,ph,PDFC.panel);font('head',22,PDFC.faint);text(initials(s.name),px+pw/2,y0+ph/2,{align:'center',baseline:'middle'})}
+  y=Math.max(hy,y0+ph)+5;
+
+  /* ---- vital numbers ---- */
+  const stats=[['Armor Class',s.ac===''?'–':String(s.ac),s.acNote],['Initiative',sg(initB(s)),''],['Speed',s.speed||'–',''],['Prof. Bonus',sg(PB),''],
+    ['Passive Perc.',String(passive(s)),''],['Hit Points',s.hp+' / '+s.hpMax,num(s.tmp)?'+'+num(s.tmp)+' temporär':''],['Hit Dice',Math.max(0,L-num(s.hdUsed))+' / '+L,'d'+s.hd]];
+  const sw=(PCW-6*2.6)/7,sh=20;
+  stats.forEach(([l,v,sub],i)=>{const x=PM+i*(sw+2.6);rr(x,y,sw,sh,i===5?'#EEF7F3':null);cap(l,x+sw/2,y+2.3,{align:'center'});
+    const pt=fitPt(v,16,sw-3);font('head',pt,i===5?PDFC.mint:PDFC.ink);text(v,x+sw/2,y+7.2+(16-pt)*.18,{align:'center'});
+    if(sub){font('normal',6.2,PDFC.soft);const ls=wrap(sub,sw-2.5).slice(0,2);text(ls,x+sw/2,y+14.6-(ls.length-1)*1.3,{align:'center'})}});
+  y+=sh+3.4;
+
+  /* ---- abilities and saving throws ---- */
+  const aw=(PCW-5*2.6)/6,ah=23.5;
+  AB.forEach((a,i)=>{const x=PM+i*(aw+2.6),prof=s.saves.includes(a);rr(x,y,aw,ah,prof?'#FBF3E4':null);cap(ABN[a],x+aw/2,y+2.3,{align:'center'});
+    font('head',19);text(sg(mod(s.ab[a])),x+aw/2,y+6,{align:'center'});font('normal',8.5,PDFC.soft);text(String(s.ab[a]),x+aw/2,y+13.4,{align:'center'});
+    const sv='Save '+sg(saveB(s,a));font(prof?'bold':'normal',7.4,prof?PDFC.amber:PDFC.soft);const w=doc.getTextWidth(pdfClean(sv)),sx=x+aw/2-(w+2.6)/2;mark(sx+.95,y+19.25,prof?1:0);font(prof?'bold':'normal',7.4,prof?PDFC.amber:PDFC.soft);text(sv,sx+2.6,y+17.9)});
+  y+=ah+1.5;
+
+  /* ---- skills ---- */
+  sec('Skills',s.joat?'Jack of All Trades: halber Proficiency Bonus auf alle anderen':'',32);
+  const cw=(PCW-2*7)/3,rh=5.15;
+  SK.forEach(([n,a],i)=>{const col=Math.floor(i/6),row=i%6,x=PM+col*(cw+7),yy=y+row*rh,l=s.skills[n]||0;
+    mark(x+1.2,yy+2,l);font(l?'medium':'normal',8.6);text(n,x+3.8,yy+.25);const nw=doc.getTextWidth(pdfClean(n));
+    font('normal',6,PDFC.faint);text(ABS[a],x+3.8+nw+1.3,yy+1.15);font(l?'bold':'normal',8.6,l?PDFC.ink:PDFC.soft);text(sg(skillB(s,n,a)),x+cw,yy+.25,{align:'right'});
+    doc.setDrawColor(PDFC.rule);doc.setLineWidth(.15);doc.line(x,yy+rh-.55,x+cw,yy+rh-.55)});
+  y+=6*rh+1.5;
+
+  /* ---- attacks ---- */
+  if(s.atk.length){
+    const cols=[['Angriff',46],['Treffer',15],['Schaden',30],['Art',23],['Notizen',PCW-114]];
+    sec('Angriffe',s.cast.ab?'Spell Save DC '+spellDC(s)+' · Spell Attack '+sg(spellAtk(s)):'',14);
+    let x=PM;cols.forEach(([l,w])=>{cap(l,x,y);x+=w});y+=4.2;
+    s.atk.forEach(a=>{const hit=atkHit(s,a);font('normal',7.8);const nt=wrap(a.note||'',cols[4][1]-1);font('medium',9);const nm=wrap(a.n||'Angriff',cols[0][1]-2);
+      font('normal',8.6);const dm=wrap(atkDmg(s,a)||'–',cols[2][1]-2);const h=Math.max(nm.length*lh(9),nt.length*lh(7.8),dm.length*lh(8.6))+2;need(h);
+      let x=PM;font('medium',9);text(nm,x,y);x+=cols[0][1];font('bold',9,hit==null?PDFC.soft:PDFC.coral);text(hit==null?'–':sg(hit),x,y);x+=cols[1][1];
+      font('normal',8.6);text(dm,x,y+.2);x+=cols[2][1];font('normal',8.2,PDFC.soft);text(a.ty||'',x,y+.3);x+=cols[3][1];font('normal',7.8,PDFC.soft);text(nt,x,y+.5);
+      y+=h;doc.setDrawColor(PDFC.rule);doc.setLineWidth(.15);doc.line(PM,y-1,PM+PCW,y-1)});
+    y+=1}
+
+  /* ---- limited uses ---- */
+  const lim=s.feats.filter(f=>num(f.max)>0);
+  if(lim.length){sec('Begrenzte Fähigkeiten','abgehakt = verbraucht',8);
+    lim.forEach(f=>{need(6.2);const n=num(f.max),u=clamp(num(f.used),0,n);font('medium',9);text(f.n,PM,y);
+      const nw=Math.min(doc.getTextWidth(pdfClean(f.n)),110);font('normal',7.2,PDFC.soft);text(restDe(f.rest),PM+nw+3,y+.9);
+      if(n<=20){for(let k=0;k<n;k++){const bx=PM+PCW-(n-k)*4.4+1;doc.setDrawColor(PDFC.amber);doc.setLineWidth(.3);if(k<u){doc.setFillColor(PDFC.amber);doc.rect(bx,y+.3,3.2,3.2,'FD')}else doc.rect(bx,y+.3,3.2,3.2,'S')}}
+      else{font('bold',9,PDFC.amber);text((n-u)+' von '+n+' übrig',PM+PCW,y,{align:'right'})}
+      y+=6})}
+
+  /* ---- senses, languages, training ---- */
+  const kv=[['Senses',s.senses],['Languages',s.langs],['Proficiencies',s.profs],['Conditions',(s.cond||[]).join(', ')],['Heroic Inspiration',s.insp?'Ja':''],
+    ['Death Saves',(num(s.ds[0])||num(s.ds[1]))?num(s.ds[0])+' Erfolge, '+num(s.ds[1])+' Fehlschläge':'']].filter(x=>String(x[1]||'').trim());
+  if(kv.length){sec('Sinne, Sprachen, Training','',8);kv.forEach(([k,v])=>{font('normal',8.6);const ls=wrap(v,PCW-36);const h=ls.length*lh(8.6)+1.4;need(h);
+    cap(k,PM,y+.7);font('normal',8.6);text(ls,PM+36,y);y+=h})}
+
+  /* ---- two-column flow for the long parts ---- */
+  const W=(PCW-7)/2;
+  const rows={
+    head:(t,pt,col,f)=>{font(f||'medium',pt);return wrap(t,W).map((l,i,a)=>({h:lh(pt),keep:true,draw:(x,yy)=>{font(f||'medium',pt,col);text(l,x,yy)}}))},
+    para:(t,pt,col,f)=>{font(f||'normal',pt);return wrap(t,W).map(l=>({h:lh(pt),draw:(x,yy)=>{font(f||'normal',pt,col);text(l,x,yy)}}))},
+    gap:h=>[{h,gap:true,draw:()=>{}}],
+    item:list=>{if(list.length<=10)list.slice(0,-1).forEach(r=>{r.keep=true});return list}}; // short entries are not split across columns
+  const flow=list=>{let top=y,c=0,cy=y,maxY=y;
+    const bal=from=>{let t=0;for(let k=from;k<list.length;k++)t+=list[k].h;return t<=2*(PBOT-top)-6?top+t/2:null};
+    let target=bal(0);
+    for(let i=0;i<list.length;i++){const r=list[i];if(r.gap&&cy===top)continue;
+      let hh=r.h;for(let k=i;list[k]&&list[k].keep&&list[k+1];k++)hh+=list[k+1].h;
+      const lim=c===0&&target!=null?target:PBOT;
+      if(cy+hh>lim&&cy>top){if(c===0){c=1;cy=top}else{page();top=y;c=0;cy=top;maxY=top;target=bal(i)}if(r.gap)continue}
+      r.draw(PM+c*(W+7),cy);cy+=r.h;maxY=Math.max(maxY,cy)}
+    y=maxY+1};
+
+  if(s.feats.length){sec('Features & Traits','',16);const R=[];
+    s.feats.forEach(f=>{const meta=[f.src,num(f.max)?num(f.max)+'× pro '+restDe(f.rest||'long'):''].filter(Boolean).join(' · ');
+      R.push(...rows.item([...rows.head(f.n||'Feature',9.4),...(meta?rows.head(meta,7,PDFC.amber,'medium'):[]),...rows.para(f.d||'',8.3,PDFC.ink)]),...rows.gap(2.4))});
+    flow(R)}
+
+  if(s.spells.length||(s.cast&&s.cast.type)){
+    const ca=s.cast||{},slots=(ca.slots||[]).map(num),used=(ca.used||[]).map(num);
+    sec('Spells',ca.ab?ABN[ca.ab]+' · Save DC '+spellDC(s)+' · Spell Attack '+sg(spellAtk(s)):'',16);
+    const sl=slots.map((n,i)=>n?(i+1)+'. Grad: '+n+(used[i]?' ('+Math.min(used[i],n)+' verbraucht)':''):'').filter(Boolean);
+    if(sl.length){font('normal',8.6);const ls=wrap((ca.type==='pact'?'Pact-Slots, zurück nach Short Rest. ':'Spell Slots: ')+sl.join('   ·   '),PCW);need(ls.length*lh(8.6)+2);text(ls,PM,y);y+=ls.length*lh(8.6)+2}
+    const R=[];const by={};s.spells.forEach(x=>{const l=clamp(num(x.l),0,9);(by[l]=by[l]||[]).push(x)});
+    Object.keys(by).map(Number).sort((a,b)=>a-b).forEach(l=>{R.push(...rows.head(l?l+'. Grad':'Cantrips',10.5,PDFC.violet,'head'),...rows.gap(.8));
+      by[l].sort((a,b)=>String(a.n).localeCompare(String(b.n))).forEach(x=>{
+        const meta=[x.t,x.r,x.c?'Concentration':'',x.rit?'Ritual':'',l&&x.prep===false?'nicht vorbereitet':''].filter(Boolean).join(' · ');
+        R.push(...rows.item([...rows.head(x.n||'Spell',9.2,l&&x.prep===false?PDFC.soft:PDFC.ink),...(meta?rows.head(meta,7,PDFC.soft,'normal'):[]),...rows.para(x.d||'',8.2)]),...rows.gap(2.2))});
+      R.push(...rows.gap(1.5))});
+    flow(R)}
+
+  const co=s.coins||{},coins=['cp','sp','gp','pp'].filter(k=>num(co[k])).map(k=>num(co[k])+' '+k.toUpperCase());
+  if(s.items.length||coins.length){sec('Ausrüstung',coins.length?'Geld: '+coins.join(' · '):'',12);const R=[];
+    s.items.forEach(i=>{R.push(...rows.item([...rows.head((num(i.q)>1?num(i.q)+'× ':'')+(i.n||'Gegenstand'),9),...(i.note?rows.para(i.note,8,PDFC.soft):[])]),...rows.gap(1.6))});
+    flow(R)}
+
+  const prof=[['Aussehen',s.look],['Personality Traits',s.traits],['Ideals',s.ideals],['Bonds',s.bonds],['Flaws',s.flaws],['Hintergrundgeschichte',s.story]].filter(x=>String(x[1]||'').trim());
+  const facts=[s.size?'Größe: '+s.size:'',s.age?'Alter: '+s.age:'',s.align?'Alignment: '+s.align:''].filter(Boolean).join('   ·   ');
+  if(prof.length||facts){sec('Persönlichkeit & Geschichte','',16);
+    if(facts){font('normal',8.6,PDFC.soft);const ls=wrap(facts,PCW);text(ls,PM,y);y+=ls.length*lh(8.6)+2}
+    const R=[];prof.forEach(([k,v])=>{R.push(...rows.head(k,9.4,PDFC.amber),...rows.para(v,8.6),...rows.gap(2.6))});flow(R)}
+}
+
+async function sheetsPdf(list,fname){
+  const jsPDF=await pdfReady(),F=window.HM_PDF_FONTS;
+  const doc=new jsPDF({unit:'mm',format:'a4',compress:true});
+  [['Outfit-Regular','Outfit','normal'],['Outfit-Medium','Outfit','medium'],['Outfit-SemiBold','Outfit','bold'],['Marcellus-Regular','Marcellus','normal']].forEach(([f,n,st])=>{doc.addFileToVFS(f+'.ttf',F[f]);doc.addFont(f+'.ttf',n,st)});
+  doc.setLineHeightFactor(LHF);
+  const ranges=[];
+  list.forEach((c,i)=>{if(i)doc.addPage();const pages=[doc.internal.getNumberOfPages()];pdfSheet(doc,c.s,c.uid,{player:c.player,pages});ranges.push({name:c.s.name||'Namenlos',pages})});
+  const day=new Date().toLocaleDateString('de-DE',{day:'numeric',month:'long',year:'numeric'});
+  ranges.forEach(r=>r.pages.forEach((p,i)=>{doc.setPage(p);doc.setDrawColor(PDFC.rule);doc.setLineWidth(.2);doc.line(PM,A4H-11.5,PM+PCW,A4H-11.5);
+    doc.setFont('Outfit','normal');doc.setFontSize(7);doc.setTextColor(PDFC.faint);
+    doc.text(pdfClean('Hollowmere Kampagnenbuch · Stand '+day),PM,A4H-9.5,{baseline:'top'});
+    doc.text(pdfClean(r.name),A4W/2,A4H-9.5,{baseline:'top',align:'center'});
+    doc.text('Seite '+(i+1)+' von '+r.pages.length,PM+PCW,A4H-9.5,{baseline:'top',align:'right'})}));
+  doc.setProperties({title:list.length===1?(list[0].s.name||'Charakter')+' – Charakterbogen':'Hollowmere – Charakterbögen',subject:'Charakterbogen',creator:'Hollowmere Kampagnenbuch'});
+  const blob=doc.output('blob'),url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download=fname;a.rel='noopener';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
+  return blob}
+
+function PdfBtn({list,file,label,cls}){
+  const [busy,setBusy]=useState(false);
+  const go=async()=>{const l=list().filter(x=>x&&x.s);if(!l.length)return;setBusy(true);
+    try{await sheetsPdf(l,file?pdfFile(file)+'.pdf':pdfFile(l[0].s.name)+' - Charakterbogen.pdf')}
+    catch(e){console.error(e);toast('Das PDF ließ sich nicht erstellen. Prüf die Verbindung und versuch es noch einmal.','err')}
+    setBusy(false)};
+  return html`<button type="button" class=${cls||'btn'} disabled=${busy} onClick=${go}><${Ic} n="down"/>${busy?'PDF entsteht …':(label||'PDF')}</button>`}
+
 /* ================= game master: entries ================= */
 const VIS={hidden:'Entwurf, nur für dich',open:'Für alle sichtbar',pw:'Öffnet sich mit Passwort',private:'Privat für einzelne Spieler'};
 const pubDoc=it=>({kind:it.kind,title:it.title||'',sub:it.sub||'',body:it.body||'',status:it.status||'',at:it.at||Date.now(),pub:it.pub||0,img:it.img||0});
@@ -1977,14 +2170,16 @@ function GmPlayers(){
   const ids=Array.from(new Set(Object.keys(S.chars).concat(Object.keys(S.sheets)))),cur=S.ui.gmSheet&&S.sheets[S.ui.gmSheet]?S.ui.gmSheet:'';
   const kick=async u=>{try{await S.db.doc('sheets/'+u).delete();await S.db.doc('chars/'+u+'/media/portrait').delete();await S.db.doc('chars/'+u).delete();if(S.ui.gmSheet===u)ui({gmSheet:''})}catch(e){oops('Das Entfernen')(e)}};
   if(cur){const s=normSheet(clone(S.sheets[cur]));return html`<button class="btn quiet" onClick=${()=>ui({gmSheet:''})}><${Ic} n="back"/>Alle Spieler</button>
-    <p class="sm soft" style="margin:.8rem 0">Bogen von ${nameOf(cur)}, nur zum Lesen. Änderungen macht der Spieler selbst.</p><${Sheet} key=${cur} s=${s} uid=${cur} ro=${true} set=${()=>{}}/>`}
+    <p class="sm soft" style="margin:.8rem 0">Bogen von ${pdfWho(cur)||nameOf(cur)}. Ein Bild kannst du einsetzen, zum Beispiel als Platzhalter. Die Werte ändert der Spieler selbst.</p><${Sheet} key=${cur} s=${s} uid=${cur} ro=${true} gm=${true} set=${()=>{}}/>`}
+  const withSheet=ids.filter(u=>S.sheets[u]);
   return html`<p class="lead">Alle, die das Kampagnenbuch geöffnet haben, mit den Werten, die du am häufigsten brauchst.</p><${GmImport}/>
+    ${withSheet.length?html`<div class="rowf" style="margin-bottom:.8rem"><${PdfBtn} label=${withSheet.length>1?'Alle '+withSheet.length+' Bögen als PDF':'Bogen als PDF'} file="Hollowmere - alle Charaktere" list=${()=>withSheet.filter(u=>S.sheets[u]).map(u=>({s:S.sheets[u],uid:u,player:pdfWho(u)}))}/><span class="sm soft">Ein Bogen pro Charakter, alle in einer Datei.</span></div>`:null}
     ${!ids.length?html`<p class="empty">Noch war niemand da. Schick deinen Spielern die Adresse der App (unter Session).</p>`:html`<div class="scrollx"><table class="roster">
       <thead><tr><th>Spieler</th><th>Charakter</th><th>AC</th><th>HP</th><th>Passive Perc.</th><th>Init</th><th></th></tr></thead>
       <tbody>${ids.map(u=>{const raw=S.sheets[u],s=raw?normSheet(clone(raw)):null,c=S.chars[u]||{};return html`<tr key=${u}><td><${Who} uid=${u}/></td>
         <td>${s?html`<b>${s.name||'Namenlos'}</b><br/><span class="sm soft">${clsLine(s)}</span>`:html`<span class="soft">noch keiner</span>`}</td>
         <td>${s?s.ac:''}</td><td>${s?s.hp+' / '+s.hpMax+(num(s.tmp)?' +'+s.tmp:''):''}</td><td>${s?passive(s):''}</td><td>${s?sg(initB(s)):''}</td>
-        <td><span class="rowf">${s?html`<button class="btn s" onClick=${()=>{ui({gmSheet:u});window.scrollTo(0,0)}}>Bogen</button>`:null}${u!==S.uid&&(s||c.joined)?html`<${Confirm} label="Entfernen" ask=${s?'Charakter und Bogen löschen?':'Aus der Liste nehmen?'} yes="Entfernen" onYes=${()=>kick(u)}/>`:null}</span></td></tr>`})}</tbody></table></div>`}`}
+        <td><span class="rowf">${s?html`<button class="btn s" onClick=${()=>{ui({gmSheet:u});window.scrollTo(0,0)}}>Bogen</button><${PdfBtn} cls="btn s" list=${()=>[{s:S.sheets[u],uid:u,player:pdfWho(u)}]}/>`:null}<${FileBtn} cls="btn s" label="Bild" icon="cam" onFile=${f=>gmSetPortrait(u,f)}/>${u!==S.uid&&(s||c.joined)?html`<${Confirm} label="Entfernen" ask=${s?'Charakter und Bogen löschen?':'Aus der Liste nehmen?'} yes="Entfernen" onYes=${()=>kick(u)}/>`:null}</span></td></tr>`})}</tbody></table></div>`}`}
 function GmTab(){
   const v=S.ui.gm;
   return html`<h1 class="h1">Spielleitung</h1>
