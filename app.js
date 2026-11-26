@@ -447,12 +447,14 @@ function heroCol(c,uid){
   const f=String((c&&c.name)||'').trim().split(/\s+/)[0].toLowerCase();if(HCOL_NAME[f])return HCOL_NAME[f];
   let h=0;const s=String(uid||f);for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))>>>0;return HCOL[h%5][0]}
 const mono=n=>(String(n||'').trim().charAt(0)||'?').toUpperCase();
-function Medal({uid,name,lvl,onFile,label,src}){
+function zoomPic(src,name){S.view={src,name:name||''};emit()} // open a picture large
+function Medal({uid,name,lvl,onFile,label,src,zoom}){
   const ref=useRef(null),p=S.portraits[uid],d=src!==undefined?src:p&&p.d;
   const face=d?html`<img src=${d} alt=${onFile?'':'Bild von '+(name||'einem Charakter')}/>`:html`<span aria-hidden="true">${mono(name)}</span>`;
   return html`<div class="medal">
     ${onFile?html`<button type="button" class="disc" aria-label=${label||'Bild auswählen'} title=${label||'Bild auswählen'} onClick=${()=>ref.current&&ref.current.click()}>${face}</button><span class="cam" aria-hidden="true"><${Ic} n="cam"/></span>
       <input type="file" accept="image/*" hidden ref=${ref} onChange=${e=>{const f=e.target.files&&e.target.files[0];e.target.value='';if(f)onFile(f)}}/>`
+      :d&&zoom?html`<button type="button" class="disc zoom" aria-label=${'Bild von '+(name||'einem Charakter')+' groß ansehen'} title="Groß ansehen" onClick=${()=>zoomPic(d,name)}>${face}</button>`
       :html`<div class="disc">${face}</div>`}
     ${lvl?html`<span class="shield" role="img" aria-label=${'Level '+lvl}><svg viewBox="0 0 52 60" aria-hidden="true"><path class="s1" d="M26 2 L49 9 V28 C49 43 39 52 26 58 C13 52 3 43 3 28 V9 Z"/><path class="s2" d="M26 7 L44 12.5 V28 C44 40 36 47.5 26 52.5 C16 47.5 8 40 8 28 V12.5 Z"/></svg><small aria-hidden="true">LEVEL</small><b aria-hidden="true">${lvl}</b></span>`:null}
   </div>`}
@@ -477,10 +479,13 @@ function Top(){
     <div class="top-row"><div class="brand"><${Lantern}/><span>Tales of Nalvair</span></div>
       <span class="right savest" role="status">${S.saving?'Speichert …':S.saveErr?'Nicht gespeichert':''}</span>
       <button class="acct themebtn" aria-label=${lightOn()?'Dunkles Design':'Helles Design'} title=${lightOn()?'Dunkles Design':'Helles Design'} onClick=${()=>setTheme(lightOn()?'dark':'light')}><${Ic} n=${lightOn()?'moon':'sun'}/></button>
-      <button class="acct" aria-label="Dein Konto" title="Dein Konto" onClick=${()=>{S.acct=true;emit()}}><img src=${(S.profiles[S.uid]||{}).avatarUrl||avatarFor(S.me&&S.me.name,S.uid)} alt=""/></button></div>
+      <${AcctBtn}/></div>
     <nav class="tabs" aria-label="Bereiche">${TABS.filter(t=>t[0]!=='gm'||S.isGM).map(t=>html`<button key=${t[0]} aria-current=${S.ui.tab===t[0]?'page':null} onClick=${()=>{ui({tab:t[0]});window.scrollTo(0,0)}}>
       <${Ic} n=${t[2]}/>${t[1]}${t[0]==='chron'&&unread?html`<span class="badge" aria-label=${unread+' neu'}>${unread}</span>`:null}</button>`)}</nav>
   </div></header>`}
+function AcctBtn(){
+  const photo=(People.map[S.uid]||{}).photo,c=S.chars[S.uid]||{},n=c.name||(S.me&&S.me.name)||'';
+  return html`<button class=${'acct'+(c.name?' hc-'+heroCol(c,S.uid):'')} aria-label="Dein Konto" title="Dein Konto" onClick=${()=>{S.acct=true;emit()}}>${photo?html`<img src=${photo} alt=""/>`:html`<span aria-hidden="true">${mono(n)}</span>`}</button>`}
 function InitAsk({cb}){
   const mine=S.cardX.init&&S.cardX.init.c===cb.call?S.cardX.init.v:null,[v,setV]=useState('');
   const go=e=>{e.preventDefault();if(v==='')return;sendInit(v);setV('')};
@@ -699,7 +704,7 @@ function Sheet({s,uid,edit,ro,set,gm,nopdf}){
   return html`
     <div class="sh-head">
       <div class=${'np big hc-'+heroCol(s,uid)}>
-        <${Medal} uid=${uid} name=${s.name} lvl=${L} label=${ro?'Bild einsetzen':'Bild auswählen'} onFile=${ro?(gm?f=>gmSetPortrait(uid,f):null):setPortrait}/>
+        <${Medal} uid=${uid} name=${s.name} lvl=${L} zoom=${true} label=${ro?'Bild einsetzen':'Bild auswählen'} onFile=${ro?(gm?f=>gmSetPortrait(uid,f):null):setPortrait}/>
         <div class="plate"><h1 class="np-name">${s.name||'Namenlos'}</h1><div class="np-rule" aria-hidden="true"></div><${NpSub} c=${s}/>
           <p class="np-who">gespielt von ${nameOf(uid)}</p>${s.bg?html`<div class="idtags"><span class="tag">Background: ${s.bg}</span></div>`:null}</div>
       </div>
@@ -1573,7 +1578,7 @@ function PCard({uid}){
   const c=S.chars[uid],me=uid===S.uid,on=!!S.online[uid],hpMax=Math.max(1,num(c.hpMax)),pct=clamp(num(c.hp)/hpMax*100,0,100);
   const hp=c.shareHp&&c.hpMax!=null,cond=c.cond&&c.cond.length;
   return html`<article class=${'pcard np hc-'+heroCol(c,uid)+(me?' me':'')}>
-    <${Medal} uid=${uid} name=${c.name} lvl=${lvlOf(c)}/>
+    <${Medal} uid=${uid} name=${c.name} lvl=${lvlOf(c)} zoom=${true}/>
     <div class="plate">
       <span class=${'np-lamp'+(on?' on':'')} role="img" aria-label=${on?'gerade hier':'nicht hier'} title=${on?'gerade hier':'nicht hier'}><${Ic} n="lamp"/></span>
       <h3 class="np-name">${c.name}</h3>
@@ -1689,7 +1694,7 @@ function ChronTab(){
   else if(k==='handout')body=html`<div class="handouts">${list.sort((a,b)=>(b.pub||0)-(a.pub||0)).map(it=>it.sealed?html`<${Sealed} key=${it.id} it=${it}/>`:html`<div class="handout" key=${it.id}><${Orn} s=${true}/>
       <h3>${it.title}${tagNew(it)}${opn(it)}</h3><${Pic} path=${'items/'+it.id+'/media/img'} v=${it.img} kb=${it.kb} alt=${it.title}/>${it.body?html`<p class="txt pre">${it.body}</p>`:null}${it.sub?html`<p class="from">— ${it.sub}</p>`:null}</div>`)}</div>`;
   else if(k==='npc')body=html`<div class="pcards">${list.sort((a,b)=>String(a.title).localeCompare(String(b.title))).map(it=>it.sealed?html`<${Sealed} key=${it.id} it=${it}/>`:html`<article class=${'pcard np npc-np hc-'+heroCol({name:it.title},it.id)} key=${it.id}>
-      <${Medal} uid=${it.id} name=${it.title} src=${it.img?(media('items/'+it.id+'/media/img',it.img,it.kb)||''):''}/>
+      <${Medal} uid=${it.id} name=${it.title} zoom=${true} src=${it.img?(media('items/'+it.id+'/media/img',it.img,it.kb)||''):''}/>
       <div class="plate"><h3 class="np-name">${it.title}${tagNew(it)}</h3><div class="np-rule" aria-hidden="true"></div>${it.sub?html`<p class="np-who" style="margin:0">${it.sub}</p>`:null}
         ${it.body?html`<div class="np-more"><p class="pre sm" style="margin:0">${it.body}</p></div>`:null}</div></article>`)}</div>`;
   else body=list.sort((a,b)=>((a.status||'open')==='open'?0:1)-((b.status||'open')==='open'?0:1)||(b.at||0)-(a.at||0)).map(it=>it.sealed?html`<${Sealed} key=${it.id} it=${it}/>`:html`<article class=${'entry quest q-'+(it.status||'open')} key=${it.id}>
@@ -2321,7 +2326,8 @@ function App(){
   const t=S.ui.tab==='gm'&&!S.isGM?'sheet':S.ui.tab;
   return html`<${Top}/><main class="wrap" id="main"><${Strips}/>
     ${t==='party'?html`<${PartyTab}/>`:t==='map'?html`<${MapTab}/>`:t==='chron'?html`<${ChronTab}/>`:t==='notes'?html`<${NotesTab}/>`:t==='gm'?html`<${GmTab}/>`:html`<${SheetTab}/>`}
-    </main>${S.acct?html`<${Account}/>`:null}<${Toasts}/>`}
+    </main>${S.acct?html`<${Account}/>`:null}
+    ${S.view?html`<${Modal} title=${S.view.name||'Bild'} onClose=${()=>{S.view=null;emit()}}><img class="zoomimg" src=${S.view.src} alt=${'Bild von '+(S.view.name||'einem Charakter')}/><//>`:null}<${Toasts}/>`}
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();S.installEvt=e;emit()});
 window.addEventListener('appinstalled',()=>{S.installEvt=null;emit()});
 window.addEventListener('error',()=>{try{toast('Hier ist etwas schiefgegangen. Wenn es hakt, lade die Seite neu.','err')}catch(e){}});
