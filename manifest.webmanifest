@@ -1,7 +1,7 @@
 {
-  "name": "Hollowmere Kampagnenbuch",
-  "short_name": "Kampagnenbuch",
-  "description": "Charakterbögen, Gruppe, Karte, Chronik und Notizen eurer Hollowmere-Runde.",
+  "name": "Tales of Nalvair",
+  "short_name": "Nalvair",
+  "description": "Tales of Nalvair: Charakterbögen, Gruppe, Karte, Chronik und Notizen eurer Runde.",
   "lang": "de",
   "start_url": "./",
   "scope": "./",

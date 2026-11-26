@@ -1,7 +1,8 @@
-# Hollowmere Kampagnenbuch
+# Tales of Nalvair · Kampagnenbuch
 
 Das Kampagnenbuch unserer D&D-Runde: Charakterbögen, Gruppe, Karte, Chronik und Notizen.
 Es läuft als Web-App im Browser und lässt sich auf Mac, Windows und dem Handy als App installieren.
+Der Look passt zum Kamera-Overlay: dunkel als Standard, hell nach Wahl (Konto → Darstellung oder Sonne/Mond oben).
 
 - Daten und Anmeldung: Firebase (Firestore und Authentication). Die Verbindung steht in `config.js`.
 - Wer was lesen und schreiben darf, regeln die Firestore-Sicherheitsregeln im Firebase-Projekt.

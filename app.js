@@ -1,5 +1,5 @@
 (function(){'use strict';
-if(!window.htmPreact||!window.nacl){document.getElementById('root').innerHTML='<main class="wrap"><div class="boot"><h1 class="h1">Hollowmere</h1><p class="lead">Das Kampagnenbuch konnte seine Bausteine nicht laden. Prüf deine Verbindung und lade die Seite neu.</p></div></main>';return}
+if(!window.htmPreact||!window.nacl){document.getElementById('root').innerHTML='<main class="wrap"><div class="boot"><h1 class="h1">Tales of Nalvair</h1><p class="lead">Das Kampagnenbuch konnte seine Bausteine nicht laden. Prüf deine Verbindung und lade die Seite neu.</p></div></main>';return}
 /* ================= basics ================= */
 const {html,render,useState,useEffect,useRef,useReducer}=window.htmPreact;
 const nacl=window.nacl;
@@ -67,7 +67,7 @@ const CONDS=[['Blinded','Du siehst nichts. Deine Angriffe haben Disadvantage, An
 function blankSheet(){return {v:1,name:'',cls:'',sub:'',lvl:1,race:'',bg:'',align:'',xp:0,size:'',age:'',look:'',traits:'',ideals:'',bonds:'',flaws:'',story:'',
   ab:{str:10,dex:10,con:10,int:10,wis:10,cha:10},saves:[],skills:{},joat:false,pbO:'',ac:10,acNote:'',initMisc:0,speed:'30 ft',
   hpMax:8,hp:8,tmp:0,hd:8,hdUsed:0,ds:[0,0],insp:false,cond:[],senses:'',langs:'',profs:'',
-  atk:[],cast:{type:'',ab:'',slots:[0,0,0,0,0,0,0,0,0],used:[0,0,0,0,0,0,0,0,0]},spells:[],feats:[],items:[],coins:{cp:0,sp:0,gp:0,pp:0},shareHp:true}}
+  atk:[],cast:{type:'',ab:'',slots:[0,0,0,0,0,0,0,0,0],used:[0,0,0,0,0,0,0,0,0]},spells:[],feats:[],items:[],coins:{cp:0,sp:0,gp:0,pp:0},shareHp:true,col:''}}
 function normSheet(d){ // fill gaps so every field the sheet reads exists
   const b=blankSheet(),s=Object.assign(b,d||{});
   s.ab=Object.assign({str:10,dex:10,con:10,int:10,wis:10,cha:10},s.ab||{});
@@ -91,7 +91,7 @@ const spellDC=s=>s.cast.ab?8+pb(s)+mod(s.ab[s.cast.ab]):null;
 const spellAtk=s=>s.cast.ab?pb(s)+mod(s.ab[s.cast.ab]):null;
 const clsLine=s=>[[s.cls,s.sub?'('+s.sub+')':''].filter(Boolean).join(' '),s.cls||s.lvl?'Level '+lvlOf(s):'',s.race].filter(Boolean).join(' · ');
 function cardOf(s,x){ // what the rest of the group sees
-  const c={name:s.name||'',cls:s.cls||'',sub:s.sub||'',lvl:lvlOf(s),race:s.race||'',size:s.size||'',look:String(s.look||'').slice(0,600),cond:(s.cond||[]).slice(0,16),shareHp:s.shareHp!==false,pv:x.pv||0,joined:x.joined||Date.now(),init:x.init||null,at:Date.now()};
+  const c={name:s.name||'',cls:s.cls||'',sub:s.sub||'',lvl:lvlOf(s),race:s.race||'',size:s.size||'',look:String(s.look||'').slice(0,600),cond:(s.cond||[]).slice(0,16),shareHp:s.shareHp!==false,col:s.col||'',pv:x.pv||0,joined:x.joined||Date.now(),init:x.init||null,at:Date.now()};
   if(c.shareHp){c.hp=num(s.hp);c.hpMax=num(s.hpMax);c.tmp=num(s.tmp)}
   return c}
 function fromClass(s){const c=CLASSES[s.cls];if(!c)return;s.hd=c.hd;s.saves=c.sv.slice();s.cast.type=c.ct||'';s.cast.ab=c.ca||'';s.cast.slots=slotsFor(s.cast.type,s.lvl)}
@@ -189,6 +189,15 @@ function ui(patch){Object.assign(S.ui,patch);LS.set('ui',S.ui);emit()}
 function toast(msg,kind){const t={id:rid(),msg,kind:kind||''};S.toasts=S.toasts.concat(t).slice(-4);emit();setTimeout(()=>{S.toasts=S.toasts.filter(x=>x!==t);emit()},kind==='err'?7500:4200)}
 function why(e){const c=(e&&e.code)||'';return c==='permission-denied'?' Dafür fehlt dir das Recht.':c==='resource-exhausted'?' Das Tageslimit der Datenbank ist erreicht. Ab Mitternacht (US-Westküstenzeit) geht es weiter.':c==='unavailable'||c==='deadline-exceeded'?' Keine Verbindung zur Datenbank. Prüf dein Internet.':c==='invalid-argument'?' Der Inhalt ist zu groß.':c==='not-found'?' Den Eintrag gibt es nicht mehr.':''}
 const oops=what=>e=>{toast(what+' hat nicht geklappt.'+why(e),'err')};
+/* look: dark (default), light, or follow the device; index.html sets it before the first paint, this keeps it current */
+const mqLight=window.matchMedia?matchMedia('(prefers-color-scheme: light)'):null;
+const themePref=()=>{const t=LS.get('theme','dark');return t==='light'||t==='auto'?t:'dark'};
+const lightOn=()=>{const t=themePref();return t==='light'||(t==='auto'&&!!mqLight&&mqLight.matches)};
+function applyTheme(){const l=lightOn();document.documentElement.setAttribute('data-theme',l?'light':'dark');
+  const m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',l?'#FBF9F3':'#0B161C')}
+function setTheme(t){LS.set('theme',t);applyTheme();emit()}
+if(mqLight){const f=()=>{if(themePref()==='auto'){applyTheme();emit()}};if(mqLight.addEventListener)mqLight.addEventListener('change',f);else if(mqLight.addListener)mqLight.addListener(f)}
+applyTheme();
 const campOf=()=>S.camp||{title:'Hollowmere',sub:'Kampagnenbuch'};
 const nameOf=uid=>{const p=S.profiles[uid];return (p&&p.name)||'Jemand'};
 const charName=uid=>{const c=S.chars[uid];return (c&&c.name)||nameOf(uid)};
@@ -372,7 +381,10 @@ const ICONS={
   plus:'<path d="M12 5v14M5 12h14"/>',
   pin:'<path d="M12 21s6-5.6 6-10.5A6 6 0 0 0 6 10.5C6 15.4 12 21 12 21z"/><circle cx="12" cy="10.5" r="2"/>',
   back:'<path d="M14 6l-6 6 6 6"/>',
-  down:'<path d="M12 4v11M7 10.5l5 5 5-5M5 20h14"/>'};
+  down:'<path d="M12 4v11M7 10.5l5 5 5-5M5 20h14"/>',
+  lamp:'<path d="M8.4 8.6h7.2l-1.1-1.8H9.5z"/><path d="M8.9 8.6v10h6.2v-10"/><path d="M7.7 18.6h8.6l-1.1 2.3H8.8z"/><path d="M12 3.2v3.6"/><path d="M12 11.1c1.5 1.6 1.8 2.8 1.2 3.9-.4.7-1.1 1-1.7.8-.7-.2-1.1-1-.8-1.9.2-.8.7-1.5 1.3-2.8z" fill="currentColor" stroke="none"/>',
+  sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6"/>',
+  moon:'<path d="M19.5 14.6A7.6 7.6 0 0 1 9.4 4.5a7.6 7.6 0 1 0 10.1 10.1z"/>'};
 function Ic({n}){return html`<svg class="ic" viewBox="0 0 24 24" aria-hidden="true" dangerouslySetInnerHTML=${{__html:ICONS[n]||''}}></svg>`}
 function Lantern(){return html`<svg viewBox="0 0 20 26" aria-hidden="true"><path d="M6 10h8v12H6z" fill="var(--paper-2)" stroke="var(--ink)" stroke-width="1.4"/><path d="M4.5 22h11M10 10V7.6" stroke="var(--ink)" stroke-width="1.4" stroke-linecap="round"/><path d="M10 1.2c2.3 2.2 2.3 4.2 0 6-2.3-1.8-2.3-3.8 0-6z" fill="var(--flame)"/><circle cx="10" cy="16" r="2.2" fill="var(--flame)"/></svg>`}
 function F({l,wide,children}){return html`<label class=${'fl'+(wide?' wide':'')}><span>${l}</span>${children}</label>`}
@@ -427,14 +439,40 @@ function Who({uid}){
   const p=S.profiles[uid];
   return html`<span class="who"><span class=${'lit'+(S.online[uid]?' on':'')} title=${S.online[uid]?'gerade hier':'nicht hier'}></span>${p&&p.avatarUrl?html`<img src=${p.avatarUrl} alt=""/>`:null}<span>${nameOf(uid)}</span></span>`}
 
+/* ================= overlay parts: medallion with level shield, nameplate, corner ornaments ================= */
+const HCOL=[['amber','Amber'],['mint','Mint'],['coral','Koralle'],['violet','Violett'],['sky','Himmelblau'],['ivory','Elfenbein']];
+const HCOL_NAME={pip:'sky',skibbidbabap:'sky',anaxarexol:'mint',nyx:'violet',raziel:'ivory',ben:'amber',balasar:'coral',norixius:'coral'}; // as in the camera overlay
+function heroCol(c,uid){
+  const k=c&&c.col;if(k&&HCOL.some(x=>x[0]===k))return k;
+  const f=String((c&&c.name)||'').trim().split(/\s+/)[0].toLowerCase();if(HCOL_NAME[f])return HCOL_NAME[f];
+  let h=0;const s=String(uid||f);for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))>>>0;return HCOL[h%5][0]}
+const mono=n=>(String(n||'').trim().charAt(0)||'?').toUpperCase();
+function Medal({uid,name,lvl,onFile,label}){
+  const ref=useRef(null),p=S.portraits[uid],d=p&&p.d;
+  const face=d?html`<img src=${d} alt=${onFile?'':'Bild von '+(name||'einem Charakter')}/>`:html`<span aria-hidden="true">${mono(name)}</span>`;
+  return html`<div class="medal">
+    ${onFile?html`<button type="button" class="disc" aria-label=${label||'Bild auswählen'} title=${label||'Bild auswählen'} onClick=${()=>ref.current&&ref.current.click()}>${face}</button><span class="cam" aria-hidden="true"><${Ic} n="cam"/></span>
+      <input type="file" accept="image/*" hidden ref=${ref} onChange=${e=>{const f=e.target.files&&e.target.files[0];e.target.value='';if(f)onFile(f)}}/>`
+      :html`<div class="disc">${face}</div>`}
+    ${lvl?html`<span class="shield" role="img" aria-label=${'Level '+lvl}><svg viewBox="0 0 52 60" aria-hidden="true"><path class="s1" d="M26 2 L49 9 V28 C49 43 39 52 26 58 C13 52 3 43 3 28 V9 Z"/><path class="s2" d="M26 7 L44 12.5 V28 C44 40 36 47.5 26 52.5 C16 47.5 8 40 8 28 V12.5 Z"/></svg><small aria-hidden="true">LEVEL</small><b aria-hidden="true">${lvl}</b></span>`:null}
+  </div>`}
+function NpSub({c}){
+  const r=c.race,k=[c.cls,c.sub].filter(Boolean).join(' · ');
+  if(!r&&!k)return html`<div class="np-sub">Noch ohne Class</div>`;
+  return html`<div class="np-sub">${r?html`<span>${r}</span>`:null}${r&&k?html`<span class="sep" aria-hidden="true"></span> `:null}${k?html`<span class="k">${k}</span>`:null}</div>`}
+const ORN='<path d="M9 64V22Q9 9 22 9h42"/><path d="M18 46V27q0-9 9-9h19" opacity=".5"/><rect x="5" y="5" width="8" height="8" transform="rotate(45 9 9)" fill="currentColor" stroke="none"/><circle cx="64" cy="9" r="2" fill="currentColor" stroke="none"/><circle cx="9" cy="64" r="2" fill="currentColor" stroke="none"/>';
+function Orn(){return ['tl','tr','bl','br'].map(k=>html`<span key=${k} class=${'orn '+k} aria-hidden="true"><svg viewBox="0 0 72 72" fill="none" stroke="currentColor" stroke-width="1.6" dangerouslySetInnerHTML=${{__html:ORN}}></svg></span>`)}
+function TitleCard(){return html`<div class="tcard"><${Lantern}/><h1 class="h1"><small>Tales of</small>Nalvair</h1><div class="dia" aria-hidden="true"><i></i><b></b><i></i></div><p class="script">Das Kampagnenbuch</p></div>`}
+
 /* ================= masthead and strips ================= */
 const TABS=[['sheet','Bogen','sheet'],['party','Gruppe','party'],['map','Karte','map'],['chron','Chronik','book'],['notes','Notizen','note'],['gm','Leitung','lantern']];
 function chronUnread(){const seen=LS.get('seen',0);return S.inbox.filter(i=>!i.read).length+S.items.filter(i=>(i.pub||0)>seen).length}
 function Top(){
-  const c=campOf(),unread=S.ui.tab==='chron'?S.inbox.filter(i=>!i.read).length:chronUnread();
+  const unread=S.ui.tab==='chron'?S.inbox.filter(i=>!i.read).length:chronUnread();
   return html`<header class="top"><div class="wrap">
-    <div class="top-row"><div class="brand"><${Lantern}/><span>${c.title||'Hollowmere'}<small>${c.sub||''}</small></span></div>
+    <div class="top-row"><div class="brand"><${Lantern}/><span>Tales of Nalvair</span></div>
       <span class="right savest" role="status">${S.saving?'Speichert …':S.saveErr?'Nicht gespeichert':''}</span>
+      <button class="acct themebtn" aria-label=${lightOn()?'Dunkles Design':'Helles Design'} title=${lightOn()?'Dunkles Design':'Helles Design'} onClick=${()=>setTheme(lightOn()?'dark':'light')}><${Ic} n=${lightOn()?'moon':'sun'}/></button>
       <button class="acct" aria-label="Dein Konto" title="Dein Konto" onClick=${()=>{S.acct=true;emit()}}><img src=${(S.profiles[S.uid]||{}).avatarUrl||avatarFor(S.me&&S.me.name,S.uid)} alt=""/></button></div>
     <nav class="tabs" aria-label="Bereiche">${TABS.filter(t=>t[0]!=='gm'||S.isGM).map(t=>html`<button key=${t[0]} aria-current=${S.ui.tab===t[0]?'page':null} onClick=${()=>{ui({tab:t[0]});window.scrollTo(0,0)}}>
       <${Ic} n=${t[2]}/>${t[1]}${t[0]==='chron'&&unread?html`<span class="badge" aria-label=${unread+' neu'}>${unread}</span>`:null}</button>`)}</nav>
@@ -447,7 +485,7 @@ function InitAsk({cb}){
     <input class="in num" type="number" inputmode="numeric" aria-label="Dein Initiative-Ergebnis" value=${v} onInput=${e=>setV(e.target.value)}/><button class="btn solid" type="submit">Melden</button></form>`}
 function Strips(){
   const c=campOf(),cb=S.combat,out=[];
-  if(c.banner)out.push(html`<div class="banner" key="b"><b>Von der Spielleitung:</b> ${c.banner}</div>`);
+  if(c.banner&&S.ui.tab!=='party')out.push(html`<div class="banner" key="b"><b>Von der Spielleitung:</b> ${c.banner}</div>`);
   if(cb&&cb.on&&cb.order&&cb.order.length){
     const cur=cb.order[cb.turn%cb.order.length],nx=cb.order[(cb.turn+1)%cb.order.length],mine=cur.uid===S.uid;
     out.push(html`<div key="c" class=${'cbar'+(mine?' mine':'')} role="status"><${Ic} n="swords"/><span>Runde ${cb.round}</span><b>${mine?'Du bist dran!':'Am Zug: '+cur.n}</b>
@@ -647,14 +685,20 @@ function Sheet({s,uid,edit,ro,set,gm,nopdf}){
     </div>
     ${[['traits','Personality Traits'],['ideals','Ideals'],['bonds','Bonds'],['flaws','Flaws'],['story','Hintergrundgeschichte']].map(([k,n])=>ro?(s[k]?html`<div key=${k}><span class="lbl">${n}</span><p class="pre">${s[k]}</p></div>`:null)
       :html`<${F} key=${k} l=${n}><${Area} id=${'pf-'+k} rows=${k==='story'?6:2} v=${s[k]} on=${v=>upd(()=>{s[k]=v})}/><//>`)}
+    ${ro?null:html`<div><span class="lbl">Deine Farbe für Medaillon und Namensschild</span><div class="chips" role="group" aria-label="Farbe">
+        ${HCOL.map(([k,n])=>html`<button key=${k} type="button" class=${'chip colchip hc-'+k} aria-pressed=${s.col===k} onClick=${()=>upd(()=>{s.col=k})}><i class="sw" aria-hidden="true"></i>${n}</button>`)}
+        <button type="button" class="chip" aria-pressed=${!s.col} onClick=${()=>upd(()=>{s.col=''})}>Automatisch</button></div></div>`}
     ${ro?null:html`<label class="chk"><input type="checkbox" checked=${s.shareHp!==false} onChange=${ev=>{const v=ev.target.checked;upd(()=>{s.shareHp=v})}}/><span>Meine Hit Points in der Gruppenansicht zeigen</span></label>
       <div class="rowf"><${FileBtn} label="Bild auswählen" icon="cam" onFile=${setPortrait}/>
         <${Confirm} label="Charakter löschen" cls="btn warn" ask="Der ganze Bogen wird gelöscht." onYes=${deleteSheet}/></div>`}</div>`;
 
   return html`
     <div class="sh-head">
-      ${ro?(gm?html`<${PortraitPick} uid=${uid} name=${s.name} label="Bild einsetzen" onFile=${f=>gmSetPortrait(uid,f)}/>`:html`<${Portrait} uid=${uid} name=${s.name}/>`):html`<${PortraitPick} uid=${uid} name=${s.name}/>`}
-      <div class="sh-id"><h1 class="h1">${s.name||'Namenlos'}</h1><div class="idtags">${s.cls?html`<span class="tag big amber">${s.cls}${s.sub?' · '+s.sub:''}</span>`:html`<span class="tag big">Noch ohne Class</span>`}<span class="tag big violet">Level ${L}</span>${s.race?html`<span class="tag big sky">${s.race}</span>`:null}${s.bg?html`<span class="tag big">${s.bg}</span>`:null}</div></div>
+      <div class=${'np big hc-'+heroCol(s,uid)}>
+        <${Medal} uid=${uid} name=${s.name} lvl=${L} label=${ro?'Bild einsetzen':'Bild auswählen'} onFile=${ro?(gm?f=>gmSetPortrait(uid,f):null):setPortrait}/>
+        <div class="plate"><h1 class="np-name">${s.name||'Namenlos'}</h1><div class="np-rule" aria-hidden="true"></div><${NpSub} c=${s}/>
+          <p class="np-who">gespielt von ${nameOf(uid)}</p>${s.bg?html`<div class="idtags"><span class="tag">Background: ${s.bg}</span></div>`:null}</div>
+      </div>
       ${ro?(gm||!nopdf?html`<div class="sh-btns">${gm?html`<${FileBtn} label="Bild einsetzen" icon="cam" onFile=${f=>gmSetPortrait(uid,f)}/>`:null}${nopdf?null:html`<${PdfBtn} list=${()=>[{s,uid,player:pdfWho(uid)}]}/>`}</div>`:null)
         :html`<div class="sh-btns">
         <button class=${'btn'+(e?' solid':' prime')} aria-pressed=${e} onClick=${()=>ui({edit:!e})}><${Ic} n=${e?'check':'edit'}/>${e?'Fertig':'Bearbeiten'}</button>
@@ -1522,26 +1566,38 @@ function Builder({onExit}){
 
 /* ================= group ================= */
 function PCard({uid}){
-  const c=S.chars[uid],me=uid===S.uid,hpMax=Math.max(1,num(c.hpMax)),pct=clamp(num(c.hp)/hpMax*100,0,100);
-  return html`<article class=${'pcard'+(me?' me':'')}>
-    <${Portrait} uid=${uid} name=${c.name} cls="lg"/>
-    <div class="body">
-      <div class="rowf"><h3 class="grow">${c.name}</h3>${me?html`<span class="tag you">Du</span>`:null}</div>
-      <div class="soft">${clsLine(c)}</div>
-      ${c.size?html`<div class="sm"><span class="soft">Größe:</span> ${c.size}</div>`:null}
-      ${c.look?html`<p class="sm pre" style="margin:.2rem 0 0">${c.look}</p>`:null}
-      ${c.shareHp&&c.hpMax!=null?html`<div><div class=${'bar'+(num(c.hp)===0?' out':pct<=50?' low':'')}><i style=${'width:'+pct+'%'}></i></div><span class="sm soft">HP ${c.hp} / ${c.hpMax}${num(c.tmp)?' (+'+c.tmp+' temp)':''}</span></div>`:null}
-      ${c.cond&&c.cond.length?html`<div class="chips">${c.cond.map(n=>html`<span class="tag bad" key=${n}>${n}</span>`)}</div>`:null}
-      <${Who} uid=${uid}/>
+  const c=S.chars[uid],me=uid===S.uid,on=!!S.online[uid],hpMax=Math.max(1,num(c.hpMax)),pct=clamp(num(c.hp)/hpMax*100,0,100);
+  const hp=c.shareHp&&c.hpMax!=null,cond=c.cond&&c.cond.length;
+  return html`<article class=${'pcard np hc-'+heroCol(c,uid)+(me?' me':'')}>
+    <${Medal} uid=${uid} name=${c.name} lvl=${lvlOf(c)}/>
+    <div class="plate">
+      <span class=${'np-lamp'+(on?' on':'')} role="img" aria-label=${on?'gerade hier':'nicht hier'} title=${on?'gerade hier':'nicht hier'}><${Ic} n="lamp"/></span>
+      <h3 class="np-name">${c.name}</h3>
+      <div class="np-rule" aria-hidden="true"></div>
+      <${NpSub} c=${c}/>
+      <p class="np-who">gespielt von ${nameOf(uid)}${me?html`<span class="tag you">Du</span>`:null}</p>
+      ${c.look||c.size||hp||cond?html`<div class="np-more">
+        ${c.look?html`<p class="sm pre" style="margin:0">${c.look}</p>`:null}
+        ${c.size?html`<div class="sm"><span class="soft">Größe:</span> ${c.size}</div>`:null}
+        ${hp?html`<div><div class=${'bar'+(num(c.hp)===0?' out':pct<=50?' low':'')}><i style=${'width:'+pct+'%'}></i></div><span class="sm soft">HP ${c.hp} / ${c.hpMax}${num(c.tmp)?' (+'+c.tmp+' temp)':''}</span></div>`:null}
+        ${cond?html`<div class="chips">${c.cond.map(n=>html`<span class="tag bad" key=${n}>${n}</span>`)}</div>`:null}</div>`:null}
     </div></article>`}
+function Hero(){
+  const c=campOf();
+  return html`<section class="hero" aria-labelledby="hero-t"><${Orn}/>
+    <div class="hero-main">${c.sub?html`<p class="eyebrow">${c.sub}</p>`:null}<h1 class="h1" id="hero-t">${c.title||'Tales of Nalvair'}</h1><div class="hero-rule" aria-hidden="true"></div>
+      ${c.banner?html`<p class="quote">„${c.banner}“</p><p class="sm soft" style="margin:0">Nachricht der Spielleitung</p>`:null}</div>
+    ${c.next?html`<div class="when"><span class="lbl" style="margin:0">Nächste Session</span><b>${fmtDate(c.next)}</b>${c.nextNote?html`<span class="soft sm">${c.nextNote}</span>`:null}</div>`:null}
+  </section>`}
 function OrderList(){
   const cb=S.combat;if(!cb||!cb.on||!cb.order||!cb.order.length)return null;
   return html`<section style="margin-bottom:1.4rem;max-width:30rem"><h2 class="h2" style="margin-top:0">Kampfreihenfolge · Runde ${cb.round}</h2>
     <ol class="order">${cb.order.map((o,i)=>html`<li key=${o.id} class=${i===cb.turn?'cur':''}><span class="i">${o.i}</span><span class="grow">${o.n}</span>${o.uid===S.uid?html`<span class="tag you">Du</span>`:o.uid?html`<span class="tag">Held</span>`:null}</li>`)}</ol></section>`}
 function PartyTab(){
-  const c=campOf(),ids=Object.keys(S.chars),have=ids.filter(id=>S.chars[id].name).sort((a,b)=>S.chars[a].name.localeCompare(S.chars[b].name)),none=ids.filter(id=>!S.chars[id].name);
-  return html`<h1 class="h1">Die Gruppe</h1>
-    <p class="lead">${c.next?html`Nächste Session: <b>${fmtDate(c.next)}</b>${c.nextNote?' · '+c.nextNote:''}`:'Wer mit dir unterwegs ist. Die kleine Laterne leuchtet, wenn jemand gerade im Kampagnenbuch ist.'}</p>
+  const ids=Object.keys(S.chars),have=ids.filter(id=>S.chars[id].name).sort((a,b)=>S.chars[a].name.localeCompare(S.chars[b].name)),none=ids.filter(id=>!S.chars[id].name);
+  return html`<${Hero}/>
+    <div class="sect"><h2 class="h2">Die Gruppe</h2><i aria-hidden="true"></i><span class="lbl" style="margin:0">${have.length} ${have.length===1?'Held':'Helden'}</span></div>
+    <p class="soft sm" style="margin:0 0 2rem">Die kleine Laterne leuchtet, wenn jemand gerade im Kampagnenbuch ist.</p>
     <${OrderList}/>
     ${have.length?html`<div class="pcards">${have.map(id=>html`<${PCard} key=${id} uid=${id}/>`)}</div>`
       :html`<p class="empty">Noch hat niemand einen Charakter angelegt. Sobald jemand im Bogen seinen Helden baut, erscheint er hier mit Bild, Class, Größe und Kurzbeschreibung.</p>`}
@@ -1873,7 +1929,7 @@ function pdfSheet(doc,raw,uid,opt){
 
   /* ---- header with picture ---- */
   const pic=S.portraits[uid]&&S.portraits[uid].d,pw=30,ph=37.5,px=A4W-PM-pw,y0=y,tw=PCW-pw-6;
-  cap('Hollowmere · Charakterbogen',PM,y,null,PDFC.amber);
+  cap('Tales of Nalvair · Charakterbogen',PM,y,null,PDFC.amber);
   const npt=fitPt(s.name||'Namenlos',26,tw);font('head',npt);text(s.name||'Namenlos',PM,y+4.6);
   let hy=y+4.6+lh(npt);
   font('normal',10.5,PDFC.soft);
@@ -1994,10 +2050,10 @@ async function sheetsPdf(list,fname){
   const day=new Date().toLocaleDateString('de-DE',{day:'numeric',month:'long',year:'numeric'});
   ranges.forEach(r=>r.pages.forEach((p,i)=>{doc.setPage(p);doc.setDrawColor(PDFC.rule);doc.setLineWidth(.2);doc.line(PM,A4H-11.5,PM+PCW,A4H-11.5);
     doc.setFont('Outfit','normal');doc.setFontSize(7);doc.setTextColor(PDFC.faint);
-    doc.text(pdfClean('Hollowmere Kampagnenbuch · Stand '+day),PM,A4H-9.5,{baseline:'top'});
+    doc.text(pdfClean('Tales of Nalvair · Kampagnenbuch · Stand '+day),PM,A4H-9.5,{baseline:'top'});
     doc.text(pdfClean(r.name),A4W/2,A4H-9.5,{baseline:'top',align:'center'});
     doc.text('Seite '+(i+1)+' von '+r.pages.length,PM+PCW,A4H-9.5,{baseline:'top',align:'right'})}));
-  doc.setProperties({title:list.length===1?(list[0].s.name||'Charakter')+' – Charakterbogen':'Hollowmere – Charakterbögen',subject:'Charakterbogen',creator:'Hollowmere Kampagnenbuch'});
+  doc.setProperties({title:list.length===1?(list[0].s.name||'Charakter')+' – Charakterbogen':'Tales of Nalvair – Charakterbögen',subject:'Charakterbogen',creator:'Tales of Nalvair · Kampagnenbuch'});
   const blob=doc.output('blob'),url=URL.createObjectURL(blob),a=document.createElement('a');
   a.href=url;a.download=fname;a.rel='noopener';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
   return blob}
@@ -2131,10 +2187,11 @@ function GmSession(){
       <li><div><b>Inhalte vorbereiten.</b> ${S.gmItems.length?S.gmItems.length+' Einträge angelegt, davon '+S.gmItems.filter(i=>i.vis==='hidden').length+' als Entwurf.':'Tagebuch, Handouts, Gesichter, Aufträge und private Nachrichten.'}<div style="margin-top:.4rem"><button class="btn s" onClick=${()=>ui({gm:'items'})}>Zu den Inhalten</button></div></div></li>
     </ol>
     <h2 class="h2">Kampagne</h2>
-    <div class="fg" style="max-width:46rem"><${F} l="Titel"><${Late} id="cp-title" v=${c.title} on=${v=>up({title:v})}/><//><${F} l="Unterzeile"><${Late} id="cp-sub" v=${c.sub} on=${v=>up({sub:v})}/><//></div>
+    <div class="fg" style="max-width:46rem"><${F} l="Titel"><${Late} id="cp-title" v=${c.title} ph="Öl für die Laterne" on=${v=>up({title:v})}/><//><${F} l="Unterzeile"><${Late} id="cp-sub" v=${c.sub} ph="Akt I · Hollowmere · Sitzung 2" on=${v=>up({sub:v})}/><//></div>
+    <p class="sm soft" style="margin-top:.4rem">Beides steht groß oben auf der Gruppenseite, die Unterzeile klein darüber.</p>
     <h2 class="h2">Nachricht an alle</h2>
     <div class="rowf" style="max-width:46rem"><span class="grow"><${Late} id="cp-banner" v=${c.banner} ph="Roll initiative!" lbl="Nachricht an alle" on=${v=>up({banner:v})}/></span>${c.banner?html`<button class="btn quiet" onClick=${()=>up({banner:''})}>Leeren</button>`:null}</div>
-    <p class="sm soft" style="margin-top:.4rem">Steht bei allen ganz oben, bis du sie leerst. Mit Enter abschicken.</p>
+    <p class="sm soft" style="margin-top:.4rem">Steht bei allen ganz oben und auf der Gruppenseite groß unter dem Titel, bis du sie leerst. Mit Enter abschicken.</p>
     <h2 class="h2">Nächste Session</h2>
     <div class="fg" style="max-width:46rem"><${F} l="Datum und Uhrzeit"><input class="in" id="cp-next" type="datetime-local" value=${toLocal(c.next)} onChange=${e=>{const t=e.target.value?new Date(e.target.value).getTime():0;up({next:isFinite(t)?t:0})}}/><//>
       <${F} l="Notiz dazu"><${Late} id="cp-nextnote" v=${c.nextNote} ph="Wir treffen uns im Voice-Channel" on=${v=>up({nextNote:v})}/><//></div>`}
@@ -2173,7 +2230,7 @@ function GmPlayers(){
     <p class="sm soft" style="margin:.8rem 0">Bogen von ${pdfWho(cur)||nameOf(cur)}. Ein Bild kannst du einsetzen, zum Beispiel als Platzhalter. Die Werte ändert der Spieler selbst.</p><${Sheet} key=${cur} s=${s} uid=${cur} ro=${true} gm=${true} set=${()=>{}}/>`}
   const withSheet=ids.filter(u=>S.sheets[u]);
   return html`<p class="lead">Alle, die das Kampagnenbuch geöffnet haben, mit den Werten, die du am häufigsten brauchst.</p><${GmImport}/>
-    ${withSheet.length?html`<div class="rowf" style="margin-bottom:.8rem"><${PdfBtn} label=${withSheet.length>1?'Alle '+withSheet.length+' Bögen als PDF':'Bogen als PDF'} file="Hollowmere - alle Charaktere" list=${()=>withSheet.filter(u=>S.sheets[u]).map(u=>({s:S.sheets[u],uid:u,player:pdfWho(u)}))}/><span class="sm soft">Ein Bogen pro Charakter, alle in einer Datei.</span></div>`:null}
+    ${withSheet.length?html`<div class="rowf" style="margin-bottom:.8rem"><${PdfBtn} label=${withSheet.length>1?'Alle '+withSheet.length+' Bögen als PDF':'Bogen als PDF'} file="Tales of Nalvair - alle Charaktere" list=${()=>withSheet.filter(u=>S.sheets[u]).map(u=>({s:S.sheets[u],uid:u,player:pdfWho(u)}))}/><span class="sm soft">Ein Bogen pro Charakter, alle in einer Datei.</span></div>`:null}
     ${!ids.length?html`<p class="empty">Noch war niemand da. Schick deinen Spielern die Adresse der App (unter Session).</p>`:html`<div class="scrollx"><table class="roster">
       <thead><tr><th>Spieler</th><th>Charakter</th><th>AC</th><th>HP</th><th>Passive Perc.</th><th>Init</th><th></th></tr></thead>
       <tbody>${ids.map(u=>{const raw=S.sheets[u],s=raw?normSheet(clone(raw)):null,c=S.chars[u]||{};return html`<tr key=${u}><td><${Who} uid=${u}/></td>
@@ -2206,6 +2263,7 @@ function Account(){
   return html`<${Modal} title="Dein Konto" onClose=${close}><div class="stack" style="margin-top:.9rem">
     ${S.me&&S.me.email?html`<p class="soft sm" style="margin:0">Angemeldet als ${S.me.email}${S.isGM?' · Spielleitung':''}</p>`:null}
     <form class="rowf" style="align-items:flex-end" onSubmit=${save}><label class="fl grow"><span>Dein Name in der Gruppe</span><input class="in" id="acct-name" value=${n} onInput=${e=>setN(e.target.value)} maxlength="60"/></label><button class="btn" type="submit" disabled=${busy||!n.trim()}>Speichern</button></form>
+    <div><span class="lbl">Darstellung</span><div class="seg" role="group" aria-label="Darstellung">${[['dark','Dunkel'],['light','Hell'],['auto','Wie das Gerät']].map(([k,n])=>html`<button key=${k} type="button" aria-pressed=${themePref()===k} onClick=${()=>setTheme(k)}>${n}</button>`)}</div></div>
     <${InstallHint}/>
     <div><button class="btn warn" onClick=${()=>{close();signOut()}}>Abmelden</button></div></div><//>`}
 function Login(){
@@ -2216,8 +2274,8 @@ function Login(){
     if(mode==='reset')return run(async()=>{await resetMail(f.mail);setOk('Wir haben dir eine E-Mail zum Zurücksetzen geschickt.')});
     if(mode==='new'){if(!f.name.trim()){setMsg('Gib deinen Namen ein.');return}return run(()=>signUpMail(f.name,f.mail,f.pw))}
     return run(()=>signInMail(f.mail,f.pw))};
-  return html`<main class="wrap"><div class="login">
-    <div class="brand"><${Lantern}/><span>Hollowmere<small>Kampagnenbuch</small></span></div>
+  return html`<main class="wrap"><div class="login"><${Orn}/>
+    <${TitleCard}/>
     <p class="lead" style="margin:0">Melde dich an, um deinen Charakter, die Karte und die Chronik eurer Gruppe zu sehen.</p>
     <div class="box">
       <button class="btn solid gbtn" disabled=${busy} onClick=${()=>run(signInGoogle)}>Mit Google anmelden</button>
@@ -2238,8 +2296,8 @@ function Login(){
   </div></main>`}
 function NameAsk(){
   const [n,setN]=useState(''),[busy,setBusy]=useState(false);
-  return html`<main class="wrap"><form class="login" onSubmit=${async e=>{e.preventDefault();if(!n.trim())return;setBusy(true);try{await setMyName(n)}catch(x){oops('Das Speichern')(x)}setBusy(false)}}>
-    <div class="brand"><${Lantern}/><span>Hollowmere<small>Kampagnenbuch</small></span></div>
+  return html`<main class="wrap"><form class="login" onSubmit=${async e=>{e.preventDefault();if(!n.trim())return;setBusy(true);try{await setMyName(n)}catch(x){oops('Das Speichern')(x)}setBusy(false)}}><${Orn}/>
+    <${TitleCard}/>
     <p class="lead" style="margin:0">Wie sollen dich die anderen in der Gruppe sehen?</p>
     <div class="box"><label class="fl"><span>Dein Name</span><input class="in" id="ask-name" value=${n} onInput=${e=>setN(e.target.value)} maxlength="60"/></label>
       <button class="btn solid gbtn" type="submit" disabled=${busy||!n.trim()}>Weiter</button></div></form></main>`}
@@ -2247,11 +2305,11 @@ function NameAsk(){
 /* ================= root ================= */
 function Problem(){
   const t={lib:'Die App konnte ihre Bausteine nicht laden. Prüf deine Verbindung und lade die Seite neu.',config:'Die App ist noch nicht mit Firebase verbunden: In config.js fehlt die Konfiguration des Firebase-Projekts.',rules:'Die Datenbank lässt dich nicht hinein. Wahrscheinlich sind die Sicherheitsregeln in Firebase noch nicht eingetragen (Firestore Database → Regeln).',load:'Deine Daten konnten gerade nicht geladen werden. Prüf deine Verbindung und lade die Seite neu.'}[S.err]||'Etwas ist schiefgegangen. Lade die Seite neu.';
-  return html`<main class="wrap"><div class="boot"><h1 class="h1">Hollowmere</h1><p class="lead">${t}</p>${S.uid?html`<button class="btn" onClick=${signOut}>Abmelden</button>`:null}</div></main>`}
+  return html`<main class="wrap"><div class="boot"><h1 class="h1">Tales of Nalvair</h1><p class="lead">${t}</p>${S.uid?html`<button class="btn" onClick=${signOut}>Abmelden</button>`:null}</div></main>`}
 function App(){
   const [,f]=useReducer(x=>x+1,0);
   subs.add(f); // the root listens from its very first render, so an early state change is never missed
-  if(S.phase==='boot')return html`<main class="wrap"><div class="boot"><h1 class="h1">Hollowmere</h1><p class="lead">Die Laternen werden angezündet …</p></div></main>`;
+  if(S.phase==='boot')return html`<main class="wrap"><div class="boot"><h1 class="h1">Tales of Nalvair</h1><p class="lead">Die Laternen werden angezündet …</p></div></main>`;
   if(S.err)return html`<${Problem}/>`;
   if(S.phase==='login')return html`<${Login}/><${Toasts}/>`;
   if(S.me&&!S.me.name&&!(People.map[S.uid]||{}).name)return html`<${NameAsk}/><${Toasts}/>`;
