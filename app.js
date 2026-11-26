@@ -447,8 +447,8 @@ function heroCol(c,uid){
   const f=String((c&&c.name)||'').trim().split(/\s+/)[0].toLowerCase();if(HCOL_NAME[f])return HCOL_NAME[f];
   let h=0;const s=String(uid||f);for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))>>>0;return HCOL[h%5][0]}
 const mono=n=>(String(n||'').trim().charAt(0)||'?').toUpperCase();
-function Medal({uid,name,lvl,onFile,label}){
-  const ref=useRef(null),p=S.portraits[uid],d=p&&p.d;
+function Medal({uid,name,lvl,onFile,label,src}){
+  const ref=useRef(null),p=S.portraits[uid],d=src!==undefined?src:p&&p.d;
   const face=d?html`<img src=${d} alt=${onFile?'':'Bild von '+(name||'einem Charakter')}/>`:html`<span aria-hidden="true">${mono(name)}</span>`;
   return html`<div class="medal">
     ${onFile?html`<button type="button" class="disc" aria-label=${label||'Bild auswählen'} title=${label||'Bild auswählen'} onClick=${()=>ref.current&&ref.current.click()}>${face}</button><span class="cam" aria-hidden="true"><${Ic} n="cam"/></span>
@@ -461,7 +461,11 @@ function NpSub({c}){
   if(!r&&!k)return html`<div class="np-sub">Noch ohne Class</div>`;
   return html`<div class="np-sub">${r?html`<span>${r}</span>`:null}${r&&k?html`<span class="sep" aria-hidden="true"></span> `:null}${k?html`<span class="k">${k}</span>`:null}</div>`}
 const ORN='<path d="M9 64V22Q9 9 22 9h42"/><path d="M18 46V27q0-9 9-9h19" opacity=".5"/><rect x="5" y="5" width="8" height="8" transform="rotate(45 9 9)" fill="currentColor" stroke="none"/><circle cx="64" cy="9" r="2" fill="currentColor" stroke="none"/><circle cx="9" cy="64" r="2" fill="currentColor" stroke="none"/>';
-function Orn(){return ['tl','tr','bl','br'].map(k=>html`<span key=${k} class=${'orn '+k} aria-hidden="true"><svg viewBox="0 0 72 72" fill="none" stroke="currentColor" stroke-width="1.6" dangerouslySetInnerHTML=${{__html:ORN}}></svg></span>`)}
+function Orn({s}){return ['tl','tr','bl','br'].map(k=>html`<span key=${k} class=${'orn '+k+(s?' s':'')} aria-hidden="true"><svg viewBox="0 0 72 72" fill="none" stroke="currentColor" stroke-width="1.6" dangerouslySetInnerHTML=${{__html:ORN}}></svg></span>`)}
+function PageHead({title,eyebrow,lead,children}){
+  return html`<header class="phead"><div class="phead-t"><p class="eyebrow">${eyebrow||'Tales of Nalvair'}</p><h1 class="h1">${title}</h1><div class="hero-rule" aria-hidden="true"></div></div>
+    ${children?html`<div class="phead-a">${children}</div>`:null}</header>${lead?html`<p class="lead">${lead}</p>`:null}`}
+function Mini({uid,name}){const c=S.chars[uid]||{name};return uid?html`<span class=${'mini hc-'+heroCol(c,uid)} aria-hidden="true">${mono(c.name||name)}</span>`:html`<span class="mini foe" aria-hidden="true">${mono(name)}</span>`}
 function TitleCard(){return html`<div class="tcard"><${Lantern}/><h1 class="h1"><small>Tales of</small>Nalvair</h1><div class="dia" aria-hidden="true"><i></i><b></b><i></i></div><p class="script">Das Kampagnenbuch</p></div>`}
 
 /* ================= masthead and strips ================= */
@@ -1592,7 +1596,7 @@ function Hero(){
 function OrderList(){
   const cb=S.combat;if(!cb||!cb.on||!cb.order||!cb.order.length)return null;
   return html`<section style="margin-bottom:1.4rem;max-width:30rem"><h2 class="h2" style="margin-top:0">Kampfreihenfolge · Runde ${cb.round}</h2>
-    <ol class="order">${cb.order.map((o,i)=>html`<li key=${o.id} class=${i===cb.turn?'cur':''}><span class="i">${o.i}</span><span class="grow">${o.n}</span>${o.uid===S.uid?html`<span class="tag you">Du</span>`:o.uid?html`<span class="tag">Held</span>`:null}</li>`)}</ol></section>`}
+    <ol class="order">${cb.order.map((o,i)=>html`<li key=${o.id} class=${i===cb.turn?'cur':''}><span class="i">${o.i}</span><${Mini} uid=${o.uid} name=${o.n}/><span class="grow">${o.n}</span>${o.uid===S.uid?html`<span class="tag you">Du</span>`:o.uid?html`<span class="tag">Held</span>`:null}</li>`)}</ol></section>`}
 function PartyTab(){
   const ids=Object.keys(S.chars),have=ids.filter(id=>S.chars[id].name).sort((a,b)=>S.chars[a].name.localeCompare(S.chars[b].name)),none=ids.filter(id=>!S.chars[id].name);
   return html`<${Hero}/>
@@ -1610,46 +1614,46 @@ function MyNotes(){
       <button class="chip" onClick=${()=>{const id=rid();touchNotes(y=>{y.pages.push({id,t:'Neue Seite',b:''})});setPid(id)}}>+ Seite</button></div>
     <div class="rowf" style="margin:.9rem 0 .5rem;align-items:flex-end"><label class="fl grow" style="max-width:24rem"><span>Titel</span><${In} id="note-title" v=${p.t} on=${v=>touchNotes(()=>{p.t=v})}/></label>
       ${n.pages.length>1?html`<${Confirm} label="Seite löschen" onYes=${()=>{touchNotes(y=>{y.pages=y.pages.filter(x=>x.id!==p.id)});setPid(n.pages[0].id)}}/>`:null}</div>
-    <textarea class="in" id="note-body" style="min-height:22rem" aria-label="Notizen" placeholder="Namen, Hinweise, Verdächtigungen, offene Rechnungen …" value=${p.b} onInput=${e=>{const v=e.target.value;touchNotes(()=>{p.b=v})}}/>
+    <textarea class="in notepad" id="note-body" style="min-height:24rem" aria-label="Notizen" placeholder="Namen, Hinweise, Verdächtigungen, offene Rechnungen …" value=${p.b} onInput=${e=>{const v=e.target.value;touchNotes(()=>{p.b=v})}}/>
     <p class="sm soft" style="margin-top:.5rem">Diesen Zettel siehst nur du, auch die Spielleitung nicht. Er speichert sich von selbst.</p>`}
 function Board(){
   const [t,setT]=useState(''),list=S.board.slice().sort((a,b)=>(b.at||0)-(a.at||0)).slice(0,80);
   const add=e=>{e.preventDefault();const v=t.trim();if(!v)return;setT('');S.db.collection('board').add({t:v.slice(0,600),by:S.uid,at:Date.now()}).catch(oops('Das Anheften'))};
   return html`<p class="lead">Für alles, was die ganze Gruppe wissen soll: Pläne, Beute, wer wem noch Gold schuldet. Jeder kann etwas anheften.</p>
     <form class="rowf" style="max-width:46rem;align-items:flex-start" onSubmit=${add}><span class="grow"><${Area} id="board-new" rows="2" v=${t} on=${setT} ph="Neue Notiz für alle" lbl="Neue Notiz für alle"/></span><button class="btn solid" type="submit" disabled=${!t.trim()}>Anheften</button></form>
-    <div style="max-width:46rem;margin-top:.6rem">${list.length?list.map(b=>html`<div class="board-item" key=${b.id}><p class="pre" style="margin:0">${b.t}</p>
+    <div class="pinboard">${list.length?list.map(b=>html`<div class="board-item" key=${b.id}><p class="pre" style="margin:0">${b.t}</p>
         ${b.by===S.uid||S.isGM?html`<button class="xbtn" aria-label="Notiz entfernen" onClick=${()=>S.db.doc('board/'+b.id).delete().catch(oops('Das Entfernen'))}>×</button>`:html`<span></span>`}
-        <span class="sm soft">${charName(b.by)} · ${fmtDate(b.at)}</span></div>`):html`<p class="empty">Die Pinnwand ist leer.</p>`}</div>`}
+        <span class="by">${charName(b.by)} · ${fmtDate(b.at)}</span></div>`):html`<p class="empty">Die Pinnwand ist leer.</p>`}</div>`}
 function Cheat(){
   return html`<div class="sheetcheat">
-    <p class="lead">Das Wichtigste auf einen Blick. Im Zweifel entscheidet die Spielleitung, und nach der Session schlagt ihr nach.</p>
-    <h3 class="h3">In deinem Zug</h3><ul>
+    <p class="lead">Das Wichtigste auf einen Blick. Im Zweifel entscheidet die Spielleitung, und nach der Session schlagt ihr nach.</p><div class="cheat-grid">
+    <section class="ccard"><h3 class="h3">In deinem Zug</h3><ul>
       <li><b>Movement:</b> bis zu deiner Speed bewegen. Du kannst die Bewegung vor und nach deiner Action aufteilen.</li>
       <li><b>Eine Action:</b> Attack, Cast a Spell, Dash (doppelte Bewegung), Disengage (keine Opportunity Attacks gegen dich), Dodge (Angriffe gegen dich haben Disadvantage), Help (ein Verbündeter bekommt Advantage), Hide, Ready (auf einen Auslöser warten), Search oder Use an Object.</li>
       <li><b>Eine Bonus Action:</b> nur wenn ein Feature oder Spell ausdrücklich eine verlangt.</li>
       <li><b>Eine Reaction pro Runde:</b> zum Beispiel eine Opportunity Attack, wenn ein Gegner deine Reichweite verlässt.</li>
-      <li><b>Eine Kleinigkeit nebenbei:</b> Tür öffnen, Waffe ziehen, etwas zurufen.</li></ul>
-    <h3 class="h3">Würfeln</h3><ul>
+      <li><b>Eine Kleinigkeit nebenbei:</b> Tür öffnen, Waffe ziehen, etwas zurufen.</li></ul></section>
+    <section class="ccard"><h3 class="h3">Würfeln</h3><ul>
       <li><b>Ability Check, Attack Roll, Saving Throw:</b> d20 plus den Bonus aus deinem Bogen. Du schaffst es, wenn du die DC oder die Armor Class erreichst oder übertriffst.</li>
       <li><b>Advantage:</b> zwei d20, der höhere zählt. <b>Disadvantage:</b> der niedrigere zählt.</li>
       <li><b>Natural 20 beim Angriff:</b> Critical Hit, alle Schadenswürfel doppelt würfeln. <b>Natural 1:</b> daneben.</li>
-      <li><b>Inspiration:</b> einmal einsetzen für Advantage auf einen Wurf.</li></ul>
-    <h3 class="h3">0 Hit Points</h3><ul>
+      <li><b>Inspiration:</b> einmal einsetzen für Advantage auf einen Wurf.</li></ul></section>
+    <section class="ccard"><h3 class="h3">0 Hit Points</h3><ul>
       <li>Du bist bewusstlos. Zu Beginn deines Zugs würfelst du einen Death Save: 10 oder mehr ist ein Erfolg, weniger ein Fehlschlag.</li>
       <li>Drei Erfolge: stabil. Drei Fehlschläge: tot. Natural 20: du stehst mit 1 HP wieder auf. Natural 1: zwei Fehlschläge.</li>
       <li>Jede Heilung bringt dich sofort zurück.</li>
-      <li><b>Temp HP</b> werden zuerst abgezogen und addieren sich nicht: der höhere Wert gilt.</li></ul>
-    <h3 class="h3">Rasten</h3><ul>
+      <li><b>Temp HP</b> werden zuerst abgezogen und addieren sich nicht: der höhere Wert gilt.</li></ul></section>
+    <section class="ccard"><h3 class="h3">Rasten</h3><ul>
       <li><b>Short Rest</b> (eine Stunde): Hit Dice ausgeben. Jeder heilt den Wurf plus deinen CON Modifier. Manche Features kommen zurück.</li>
-      <li><b>Long Rest</b> (acht Stunden): alle Hit Points und Spell Slots, dazu die Hälfte deiner Hit Dice.</li></ul>
-    <h3 class="h3">Zaubern</h3><ul>
+      <li><b>Long Rest</b> (acht Stunden): alle Hit Points und Spell Slots, dazu die Hälfte deiner Hit Dice.</li></ul></section>
+    <section class="ccard"><h3 class="h3">Zaubern</h3><ul>
       <li><b>Cantrips</b> kosten nichts. Jeder andere Spell verbraucht einen Spell Slot seines Levels oder höher.</li>
       <li><b>Concentration:</b> immer nur ein solcher Spell gleichzeitig. Nimmst du Schaden, würfelst du einen CON Save gegen DC 10 oder den halben Schaden, je nachdem, was höher ist.</li>
-      <li><b>Spell Save DC</b> ist 8 + Proficiency Bonus + dein Zauber-Modifier. Steht im Bogen unter Spells.</li></ul>
-    <h3 class="h3">Conditions</h3><ul>${CONDS.map(c=>html`<li key=${c[0]}><b>${c[0]}:</b> ${c[1]}</li>`)}</ul></div>`}
+      <li><b>Spell Save DC</b> ist 8 + Proficiency Bonus + dein Zauber-Modifier. Steht im Bogen unter Spells.</li></ul></section>
+    <section class="ccard wide"><h3 class="h3">Conditions</h3><ul>${CONDS.map(c=>html`<li key=${c[0]}><b>${c[0]}:</b> ${c[1]}</li>`)}</ul></section></div></div>`}
 function NotesTab(){
   const v=S.ui.note;
-  return html`<h1 class="h1">Notizen</h1>
+  return html`<${PageHead} title="Notizen" eyebrow="Zettel · Pinnwand · Regeln"/>
     <div class="subtabs" role="tablist">${[['mine','Mein Zettel'],['board','Pinnwand'],['rules','Spickzettel']].map(t=>html`<button key=${t[0]} role="tab" aria-selected=${v===t[0]} aria-current=${v===t[0]?'true':null} onClick=${()=>ui({note:t[0]})}>${t[1]}</button>`)}</div>
     ${v==='board'?html`<${Board}/>`:v==='rules'?html`<${Cheat}/>`:html`<${MyNotes}/>`}`}
 
@@ -1682,15 +1686,16 @@ function ChronTab(){
   if(!list.length)body=html`<p class="empty">${k==='journal'?'Noch kein Eintrag. Nach jeder Session schreibt die Spielleitung hier auf, was geschehen ist.':k==='handout'?'Noch keine Handouts. Briefe, Rätsel und Fundstücke landen hier, sobald ihr sie findet.':k==='npc'?'Noch keine bekannten Gesichter. Wen ihr trefft, den findet ihr hier wieder.':'Noch keine Aufträge. Offene Spuren und Versprechen sammeln sich hier.'}</p>`;
   else if(k==='journal')body=list.sort((a,b)=>(b.at||0)-(a.at||0)).map(it=>it.sealed?html`<${Sealed} key=${it.id} it=${it}/>`:html`<article class="entry" key=${it.id}>
       <h2>${it.title}${tagNew(it)}${opn(it)}</h2>${it.sub?html`<p class="sub">${it.sub}</p>`:null}<${Pic} path=${'items/'+it.id+'/media/img'} v=${it.img} kb=${it.kb} alt=${it.title}/><p class="pre">${it.body}</p></article>`);
-  else if(k==='handout')body=html`<div class="handouts">${list.sort((a,b)=>(b.pub||0)-(a.pub||0)).map(it=>it.sealed?html`<${Sealed} key=${it.id} it=${it}/>`:html`<div class="handout" key=${it.id}>
-      <h3>${it.title}${tagNew(it)}${opn(it)}</h3><${Pic} path=${'items/'+it.id+'/media/img'} v=${it.img} kb=${it.kb} alt=${it.title}/>${it.body?html`<p class="txt pre">${it.body}</p>`:null}${it.sub?html`<p class="sm soft" style="margin:.5rem 0 0">${it.sub}</p>`:null}</div>`)}</div>`;
-  else if(k==='npc')body=html`<div class="npcs">${list.sort((a,b)=>String(a.title).localeCompare(String(b.title))).map(it=>it.sealed?html`<${Sealed} key=${it.id} it=${it}/>`:html`<div class="npc" key=${it.id}>
-      <${Pic} path=${'items/'+it.id+'/media/img'} v=${it.img} kb=${it.kb} alt=${it.title}/><h3 class="h3">${it.title}${tagNew(it)}</h3>${it.sub?html`<p class="soft sm" style="margin:.1rem 0 .4rem"><i>${it.sub}</i></p>`:null}<p class="pre sm" style="margin:0">${it.body}</p></div>`)}</div>`;
-  else body=list.sort((a,b)=>((a.status||'open')==='open'?0:1)-((b.status||'open')==='open'?0:1)||(b.at||0)-(a.at||0)).map(it=>it.sealed?html`<${Sealed} key=${it.id} it=${it}/>`:html`<article class="entry" key=${it.id}>
-      <h2 style="font-size:1.35rem">${it.title} <span class=${'tag'+(it.status==='done'?' ok':it.status==='failed'?' bad':'')}>${QST[it.status]||QST.open}</span>${tagNew(it)}</h2>${it.sub?html`<p class="sub">${it.sub}</p>`:null}<${Pic} path=${'items/'+it.id+'/media/img'} v=${it.img} kb=${it.kb} alt=${it.title}/><p class="pre">${it.body}</p></article>`);
-  return html`<h1 class="h1">Chronik</h1>
-    <p class="lead">Was geschehen ist, was ihr gefunden habt und wen ihr kennt. Die Spielleitung gibt Einträge frei, manche öffnen sich erst mit einem Passwort.</p>
-    ${inbox.length?html`<section style="margin-bottom:1.2rem"><h2 class="h2" style="margin-top:0">Nur für dich</h2>${inbox.map(it=>html`<${PrivItem} key=${it.id} it=${it}/>`)}</section>`:null}
+  else if(k==='handout')body=html`<div class="handouts">${list.sort((a,b)=>(b.pub||0)-(a.pub||0)).map(it=>it.sealed?html`<${Sealed} key=${it.id} it=${it}/>`:html`<div class="handout" key=${it.id}><${Orn} s=${true}/>
+      <h3>${it.title}${tagNew(it)}${opn(it)}</h3><${Pic} path=${'items/'+it.id+'/media/img'} v=${it.img} kb=${it.kb} alt=${it.title}/>${it.body?html`<p class="txt pre">${it.body}</p>`:null}${it.sub?html`<p class="from">— ${it.sub}</p>`:null}</div>`)}</div>`;
+  else if(k==='npc')body=html`<div class="pcards">${list.sort((a,b)=>String(a.title).localeCompare(String(b.title))).map(it=>it.sealed?html`<${Sealed} key=${it.id} it=${it}/>`:html`<article class=${'pcard np npc-np hc-'+heroCol({name:it.title},it.id)} key=${it.id}>
+      <${Medal} uid=${it.id} name=${it.title} src=${it.img?(media('items/'+it.id+'/media/img',it.img,it.kb)||''):''}/>
+      <div class="plate"><h3 class="np-name">${it.title}${tagNew(it)}</h3><div class="np-rule" aria-hidden="true"></div>${it.sub?html`<p class="np-who" style="margin:0">${it.sub}</p>`:null}
+        ${it.body?html`<div class="np-more"><p class="pre sm" style="margin:0">${it.body}</p></div>`:null}</div></article>`)}</div>`;
+  else body=list.sort((a,b)=>((a.status||'open')==='open'?0:1)-((b.status||'open')==='open'?0:1)||(b.at||0)-(a.at||0)).map(it=>it.sealed?html`<${Sealed} key=${it.id} it=${it}/>`:html`<article class=${'entry quest q-'+(it.status||'open')} key=${it.id}>
+      <h2 style="font-size:1.45rem">${it.title} <span class=${'tag'+(it.status==='done'?' ok':it.status==='failed'?' bad':'')}>${QST[it.status]||QST.open}</span>${tagNew(it)}</h2>${it.sub?html`<p class="sub">${it.sub}</p>`:null}<${Pic} path=${'items/'+it.id+'/media/img'} v=${it.img} kb=${it.kb} alt=${it.title}/><p class="pre">${it.body}</p></article>`);
+  return html`<${PageHead} title="Chronik" eyebrow="Was bisher geschah" lead="Was geschehen ist, was ihr gefunden habt und wen ihr kennt. Die Spielleitung gibt Einträge frei, manche öffnen sich erst mit einem Passwort."/>
+    ${inbox.length?html`<section style="margin-bottom:1.2rem"><h2 class="h2" style="margin-top:0;color:var(--violet)">Nur für dich</h2>${inbox.map(it=>html`<${PrivItem} key=${it.id} it=${it}/>`)}</section>`:null}
     ${anyLock?html`<div class="box plain" style="max-width:34rem"><span class="lbl">Passwort gefunden?</span><${PwBox}/><p class="sm soft" style="margin:.5rem 0 0">Ein richtiges Passwort öffnet den Eintrag oder das Kartengebiet für die ganze Gruppe.</p></div>`:null}
     <div class="subtabs" role="tablist">${Object.keys(KINDS).map(x=>html`<button key=${x} role="tab" aria-selected=${k===x} aria-current=${k===x?'true':null} onClick=${()=>ui({chron:x})}>${KINDS[x]}${of(x).length?html`<span class="tag">${of(x).length}</span>`:null}</button>`)}</div>
     ${body}`}
@@ -1735,24 +1740,24 @@ function MapStage({m}){
   return html`<div class="map-layout"><div style="min-width:0">
       <div class="maptools"><span class="seg" role="group" aria-label="Zoom">${[1,1.6,2.4].map(z=>html`<button key=${z} aria-pressed=${zoom===z} onClick=${()=>setZoom(z)}>${Math.round(z*100)} %</button>`)}</span>
         ${S.room?html`<button class=${'btn s'+(pingOn?' flame':'')} aria-pressed=${pingOn} onClick=${()=>setPingOn(!pingOn)}><${Ic} n="pin"/>${pingOn?'Jetzt auf die Stelle tippen':'Auf der Karte zeigen'}</button>`:null}</div>
-      <div class="mapscroll"><div ref=${lay} class=${'maplayer'+(img?'':' wait')} style=${'width:'+(zoom*100)+'%'+(pingOn?';cursor:crosshair':'')} onClick=${click}>
+      <div class="mapframe"><${Orn} s=${true}/><div class="mapscroll"><div ref=${lay} class=${'maplayer'+(img?'':' wait')} style=${'width:'+(zoom*100)+'%'+(pingOn?';cursor:crosshair':'')} onClick=${click}>
         ${img===false?'Die Karte konnte nicht geladen werden. Lade die Seite neu.':!img?'Die Karte wird entrollt …':null}
         <canvas ref=${cv} hidden=${!img} role="img" aria-label=${'Karte: '+(m.name||'')}></canvas>
         ${img?html`${m.here?html`<span class="here" style=${pos(m.here)} title="Hier ist die Gruppe"></span>`:null}
           ${locks.map((l,i)=>keys[i]||!l.cells.length?null:html`<button key=${l.id} class="lockb" style=${pos(centroid(l.cells,m))} onClick=${e=>{e.stopPropagation();setLk(l.id);setSel('')}}><${Ic} n="lock"/><span>${l.name||'Verschlossen'}</span></button>`)}
           ${pins.map((p,i)=>html`<button key=${p.id} class=${'pin'+(sel===p.id?' sel':'')} style=${pos(p)} aria-label=${p.t||'Ort '+(i+1)} onClick=${e=>{if(pingOn)return;e.stopPropagation();setSel(p.id);setLk('')}}>${i+1}</button>`)}
           ${S.pings.filter(p=>p.m===m.id).map(p=>html`<span key=${p.id} class="ping" style=${pos(p)}><span>${p.uid===S.uid?'Du':charName(p.uid)}</span></span>`)}`:null}
-      </div></div></div>
+      </div></div></div></div>
     <aside>
       ${lock?html`<div class="sealed" style="margin-top:0"><h3 class="h3"><${Ic} n="lock"/>${lock.name||'Verschlossenes Gebiet'}</h3><p class="soft" style="margin:.3rem 0 .7rem">${lock.hint||'Dieses Gebiet öffnet sich mit einem Passwort.'}</p><${PwBox}/></div>`
-        :pin?html`<div class="place"><h2 class="h2" style="margin-top:0">${pin.t||'Ort'}</h2><p class="pre">${pin.d||''}</p></div>`
+        :pin?html`<div class="place"><p class="eyebrow">Ort ${pins.indexOf(pin)+1}</p><h2 class="h2" style="margin:0 0 .5rem">${pin.t||'Ort'}</h2><p class="pre" style="margin:0">${pin.d||''}</p></div>`
         :html`<p class="soft">${pins.length?'Tippe auf eine Nummer, um mehr über den Ort zu erfahren.':'Was im Nebel liegt, habt ihr noch nicht entdeckt.'}${m.here?' Der pulsierende Ring zeigt, wo die Gruppe gerade ist.':''}</p>`}
       ${pins.length?html`<div class="chips" style="margin-top:1rem">${pins.map((p,i)=>html`<button key=${p.id} class="chip" aria-pressed=${sel===p.id} onClick=${()=>{setSel(p.id);setLk('')}}>${i+1}. ${p.t||'Ort'}</button>`)}</div>`:null}
     </aside></div>`}
 function MapTab(){
   if(S.isGM&&S.ui.mapEdit)return html`<${MapEditor}/>`;
   const maps=S.maps.slice().sort((a,b)=>(a.order||0)-(b.order||0)),cur=maps.find(m=>m.id===S.ui.map)||maps.find(m=>m.id===campOf().map)||maps[0];
-  return html`<div class="rowf"><h1 class="h1">Karte</h1>${S.isGM?html`<button class="btn right" onClick=${()=>ui({mapEdit:true})}><${Ic} n="edit"/>Karten bearbeiten</button>`:null}</div>
+  return html`<${PageHead} title="Karte" eyebrow="Die Welt von Nalvair">${S.isGM?html`<button class="btn" onClick=${()=>ui({mapEdit:true})}><${Ic} n="edit"/>Karten bearbeiten</button>`:null}<//>
     ${!cur?html`<p class="empty">${S.isGM?'Du hast noch keine Karte ausgegeben. Über „Karten bearbeiten“ lädst du eine hoch, deckst auf, was die Gruppe kennt, und gibst sie aus.':'Noch hat die Spielleitung keine Karte ausgegeben.'}</p>`:html`
       <p class="lead">Die Karte wächst mit euren Reisen. Was im Nebel liegt, deckt die Spielleitung auf, oder ihr öffnet es mit einem Passwort.</p>
       ${maps.length>1?html`<div class="chips" style="margin-bottom:.4rem">${maps.map(m=>html`<button key=${m.id} class="chip" aria-pressed=${m.id===cur.id} onClick=${()=>ui({map:m.id})}>${m.name||'Karte'}</button>`)}</div>`:null}
@@ -1841,7 +1846,7 @@ function MapEditor(){
       <div class="rowf" style="margin-top:.6rem"><span class="grow" style="max-width:16rem"><${In} id="map-new-name" v=${nm} on=${setNm} ph="Name der Karte" lbl="Name der neuen Karte"/></span>
         <${FileBtn} label=${busy==='new'?'Wird angelegt …':'Bild hochladen'} icon="plus" onFile=${f=>add(f,nm.trim()||f.name.replace(/\.[^.]+$/,''))}/></div>
       ${!list.some(m=>m.name===STARTER.name)?html`<p class="sm" style="margin:.8rem 0 0"><button class="btn s" disabled=${!!busy} onClick=${starter}>Regionskarte „Hollowmere & Thereabouts“ laden</button> <span class="soft">Deine Karte der Lande um den Mere. Bekanntes ist schon aufgedeckt, die sechs neuen Orte liegen im Nebel.</span></p>`:null}</div>`;
-  return html`<div class="rowf"><h1 class="h1">Karten bearbeiten</h1><button class="btn right" onClick=${()=>ui({mapEdit:false})}><${Ic} n="eye"/>Ansicht der Spieler</button></div>
+  return html`<${PageHead} title="Karten bearbeiten" eyebrow="Spielleitung · Entwurf"><button class="btn" onClick=${()=>ui({mapEdit:false})}><${Ic} n="eye"/>Ansicht der Spieler</button><//>
     <p class="lead">Nur du siehst diese Seite. Du arbeitest an einem Entwurf. Erst „Für Spieler ausgeben“ zeigt den Stand der Gruppe.</p>
     ${list.length>1?html`<div class="chips" style="margin-bottom:.8rem">${list.map(m=>html`<button key=${m.id} class="chip" aria-pressed=${g&&m.id===g.id} onClick=${()=>setGid(m.id)}>${m.name||'Karte'}</button>`)}</div>`:null}
     ${!g?newBox:html`
@@ -1849,13 +1854,13 @@ function MapEditor(){
         <button class="btn flame" disabled=${!!busy||!img||(!!g.pubV&&!dirty)} onClick=${publish}>Für Spieler ausgeben</button></div>
       <div class="maptools"><span class="seg" role="group" aria-label="Werkzeug">${TOOLS.map(t=>html`<button key=${t[0]} aria-pressed=${tool===t[0]} onClick=${()=>setTool(t[0])}>${t[1]}</button>`)}</span></div>
       <p class="sm soft">${HELP[tool]}</p>
-      <div class="map-layout"><div style="min-width:0"><div class="mapscroll"><div class=${'maplayer'+(img?'':' wait')}>
+      <div class="map-layout"><div style="min-width:0"><div class="mapframe"><${Orn} s=${true}/><div class="mapscroll"><div class=${'maplayer'+(img?'':' wait')}>
           ${img===false?'Das Kartenbild konnte nicht geladen werden.':!img?'Die Karte wird geladen …':null}
           <canvas ref=${cv} hidden=${!img} class="edcanvas" style="touch-action:none" onPointerDown=${down} onPointerMove=${e=>{if(drag.current.on)paint(e)}} onPointerUp=${()=>{drag.current.on=false}} onPointerCancel=${()=>{drag.current.on=false}}></canvas>
           ${img?html`${g.here?html`<span class="here" style=${pos(g.here)}></span>`:null}
             ${g.pins.map((p,i)=>html`<button key=${p.id} class=${'pin'+(pinSel===p.id?' sel':'')+(p.on===false||g.hidden.includes(cellAt(p.x,p.y,g))?' off':'')} style=${pos(p)} aria-label=${p.t||'Ort '+(i+1)} onClick=${()=>setPinSel(p.id)}>${i+1}</button>`)}
             ${S.pings.filter(p=>p.m===g.id).map(p=>html`<span key=${p.id} class="ping" style=${pos(p)}><span>${p.uid===S.uid?'Du':charName(p.uid)}</span></span>`)}`:null}
-        </div></div></div>
+        </div></div></div></div>
         <aside class="stack">
           ${tool==='area'?html`<div class="box plain"><h3 class="h3">Markiert: ${sel.size} ${sel.size===1?'Feld':'Felder'}</h3>
             ${sel.size?html`<div class="rowf" style="margin:.6rem 0"><button class="btn s" onClick=${()=>{mut(n=>{n.hidden=n.hidden.filter(k=>!sel.has(k))});setSel(new Set())}}>Aufdecken</button><button class="btn s" onClick=${()=>{mut(n=>{sel.forEach(k=>{if(!n.hidden.includes(k))n.hidden.push(k)})});setSel(new Set())}}>Verdecken</button><button class="btn s quiet" onClick=${()=>setSel(new Set())}>Auswahl leeren</button></div>
@@ -2137,7 +2142,7 @@ function GmItems(){
     <div class="rowf"><span class="soft">Neu:</span>${Object.keys(KIND1).map(k=>html`<button key=${k} class="btn s" onClick=${()=>setEd(blank(k))}><${Ic} n="plus"/>${KIND1[k]}</button>`)}</div>
     ${ed?html`<${ItemEditor} key=${ed.id} init=${ed} done=${()=>setEd(null)}/>`:null}
     ${!S.gmItems.length?html`<p class="empty">Noch nichts angelegt. Ein guter Anfang: ein Tagebucheintrag „Was bisher geschah“ zur Nacht der gestohlenen Schatten.</p>`:null}
-    ${Object.keys(KIND1).map(k=>{const l=S.gmItems.filter(i=>i.kind===k).sort((a,b)=>(b.at||0)-(a.at||0));return l.length?html`<section key=${k}><h2 class="h2">${k==='note'?'Nachrichten':KINDS[k]}</h2>
+    ${Object.keys(KIND1).map(k=>{const l=S.gmItems.filter(i=>i.kind===k).sort((a,b)=>(b.at||0)-(a.at||0));return l.length?html`<section class="panel gm-sec" key=${k}><h2 class="h3">${k==='note'?'Nachrichten':KINDS[k]}</h2>
       ${l.map(it=>html`<div class="gm-row" key=${it.id}><button class="t" onClick=${()=>{setEd(Object.assign({},clone(it),{isNew:false}));window.scrollTo(0,0)}}>${it.title||'Ohne Titel'}</button>${visTag(it)}
         ${it.vis==='hidden'||it.vis==='pw'?html`<button class="btn s" onClick=${async()=>{if(await gmSaveItem(Object.assign({},clone(it),{vis:'open'})))toast('„'+(it.title||'Eintrag')+'“ ist jetzt für alle sichtbar.')}}>Für alle freigeben</button>`:null}</div>`)}</section>`:null})}`}
 
@@ -2157,7 +2162,7 @@ function GmCombat(){
     return html`<p class="lead">Runde ${cb.round}. Alle sehen oben im Kampagnenbuch, wer am Zug ist und wer danach kommt.</p>
       <div class="rowf"><button class="btn quiet" onClick=${back}>Zurück</button><button class="btn solid" onClick=${gmNextTurn}>Weiter zum nächsten Zug</button>
         <${Confirm} label="Kampf beenden" cls="btn warn right" ask="Die Reihenfolge wird geleert." yes="Beenden" onYes=${()=>setCombat({on:false,call:0,round:0,turn:0,order:[]})}/></div>
-      <ol class="order" style="max-width:32rem;margin-top:.8rem">${o.map((x,i)=>html`<li key=${x.id} class=${i===cb.turn?'cur':''}><span class="i">${x.i}</span><span class="grow">${x.n}</span>${x.uid?html`<span class="tag">Held</span>`:null}<button class="xbtn" aria-label=${x.n+' aus dem Kampf nehmen'} onClick=${()=>drop(x.id)}>×</button></li>`)}</ol>
+      <ol class="order" style="max-width:32rem;margin-top:.8rem">${o.map((x,i)=>html`<li key=${x.id} class=${i===cb.turn?'cur':''}><span class="i">${x.i}</span><${Mini} uid=${x.uid} name=${x.n}/><span class="grow">${x.n}</span>${x.uid?html`<span class="tag">Held</span>`:null}<button class="xbtn" aria-label=${x.n+' aus dem Kampf nehmen'} onClick=${()=>drop(x.id)}>×</button></li>`)}</ol>
       <form class="rowf" style="margin-top:1rem;max-width:32rem" onSubmit=${join}><span class="grow"><${In} id="late-n" v=${late.n} ph="Kommt dazu: Name" lbl="Name" on=${v=>setLate(Object.assign({},late,{n:v}))}/></span>
         <${In} id="late-i" type="number" cls="num" v=${late.i} ph="Init" lbl="Initiative" on=${v=>setLate(Object.assign({},late,{i:v}))}/><button class="btn" type="submit">Einreihen</button></form>`}
   const start=()=>{const order=pcs.filter(u=>val(u)!=null).map(u=>({id:u,uid:u,n:S.chars[u].name,i:val(u)})).concat(foes.filter(f=>String(f.n||'').trim()).map(f=>({id:f.id,n:f.n.trim(),i:num(f.i)}))).sort((a,b)=>b.i-a.i);
@@ -2167,7 +2172,7 @@ function GmCombat(){
       <li><div><b>Initiative abfragen.</b> Jeder Spieler bekommt oben ein Feld für seinen Wurf.<div class="rowf" style="margin-top:.5rem"><button class="btn" onClick=${()=>setCombat({on:false,call:Date.now(),round:0,turn:0,order:[]})}>${cb.call?'Neu abfragen':'Initiative abfragen'}</button>
         ${cb.call?html`<button class="btn quiet" onClick=${()=>setCombat({on:false,call:0,round:0,turn:0,order:[]})}>Abfrage beenden</button>`:null}</div></div></li>
       <li><div><b>Die Helden.</b> Gemeldete Würfe erscheinen von selbst. Du kannst jeden Wert auch selbst eintragen.
-        ${pcs.length?pcs.map(u=>html`<div class="gm-row" key=${u}><span class="grow">${S.chars[u].name} <span class="soft sm">${nameOf(u)}</span></span>${val(u)!=null&&(man[u]===undefined||man[u]==='')?html`<span class="tag ok">gemeldet: ${val(u)}</span>`:null}
+        ${pcs.length?pcs.map(u=>html`<div class="gm-row" key=${u}><${Mini} uid=${u}/><span class="grow">${S.chars[u].name} <span class="soft sm">${nameOf(u)}</span></span>${val(u)!=null&&(man[u]===undefined||man[u]==='')?html`<span class="tag ok">gemeldet: ${val(u)}</span>`:null}
           <${In} type="number" cls="num" lbl=${'Initiative von '+S.chars[u].name} v=${man[u]===undefined?'':man[u]} ph="Init" on=${v=>setMan(Object.assign({},man,{[u]:v}))}/></div>`):html`<p class="soft sm" style="margin:.4rem 0 0">Noch hat niemand einen Charakter angelegt.</p>`}</div></li>
       <li><div><b>Die Gegenseite.</b> Der Name steht so in der Reihenfolge, wie du ihn hier schreibst.
         ${foes.map(f=>html`<div class="gm-row" key=${f.id}><span class="grow"><${In} v=${f.n} ph="Gloam Hound 1" lbl="Name" on=${v=>saveF(foes.map(x=>x.id===f.id?Object.assign({},x,{n:v}):x))}/></span>
@@ -2186,15 +2191,15 @@ function GmSession(){
       <li><div><b>Spieler einladen.</b> Schick deinen Spielern diese Adresse. Sie melden sich mit Google oder E-Mail an und bauen ihren Charakter. ${np?'Bisher da: '+np+'.':'Bisher war noch niemand da.'}<${CopyLink}/></div></li>
       <li><div><b>Inhalte vorbereiten.</b> ${S.gmItems.length?S.gmItems.length+' Einträge angelegt, davon '+S.gmItems.filter(i=>i.vis==='hidden').length+' als Entwurf.':'Tagebuch, Handouts, Gesichter, Aufträge und private Nachrichten.'}<div style="margin-top:.4rem"><button class="btn s" onClick=${()=>ui({gm:'items'})}>Zu den Inhalten</button></div></div></li>
     </ol>
-    <h2 class="h2">Kampagne</h2>
-    <div class="fg" style="max-width:46rem"><${F} l="Titel"><${Late} id="cp-title" v=${c.title} ph="Öl für die Laterne" on=${v=>up({title:v})}/><//><${F} l="Unterzeile"><${Late} id="cp-sub" v=${c.sub} ph="Akt I · Hollowmere · Sitzung 2" on=${v=>up({sub:v})}/><//></div>
-    <p class="sm soft" style="margin-top:.4rem">Beides steht groß oben auf der Gruppenseite, die Unterzeile klein darüber.</p>
-    <h2 class="h2">Nachricht an alle</h2>
-    <div class="rowf" style="max-width:46rem"><span class="grow"><${Late} id="cp-banner" v=${c.banner} ph="Roll initiative!" lbl="Nachricht an alle" on=${v=>up({banner:v})}/></span>${c.banner?html`<button class="btn quiet" onClick=${()=>up({banner:''})}>Leeren</button>`:null}</div>
-    <p class="sm soft" style="margin-top:.4rem">Steht bei allen ganz oben und auf der Gruppenseite groß unter dem Titel, bis du sie leerst. Mit Enter abschicken.</p>
-    <h2 class="h2">Nächste Session</h2>
-    <div class="fg" style="max-width:46rem"><${F} l="Datum und Uhrzeit"><input class="in" id="cp-next" type="datetime-local" value=${toLocal(c.next)} onChange=${e=>{const t=e.target.value?new Date(e.target.value).getTime():0;up({next:isFinite(t)?t:0})}}/><//>
-      <${F} l="Notiz dazu"><${Late} id="cp-nextnote" v=${c.nextNote} ph="Wir treffen uns im Voice-Channel" on=${v=>up({nextNote:v})}/><//></div>`}
+    <div class="panels"><section class="panel"><h2 class="h3">Kopf der Gruppenseite</h2>
+    <div class="fg"><${F} l="Titel"><${Late} id="cp-title" v=${c.title} ph="Öl für die Laterne" on=${v=>up({title:v})}/><//><${F} l="Unterzeile"><${Late} id="cp-sub" v=${c.sub} ph="Akt I · Hollowmere · Sitzung 2" on=${v=>up({sub:v})}/><//></div>
+    <p class="sm soft" style="margin:.6rem 0 0">Der Titel steht groß oben auf der Gruppenseite, die Unterzeile klein darüber.</p></section>
+    <section class="panel wide-p"><h2 class="h3">Nachricht an alle</h2>
+    <div class="rowf"><span class="grow"><${Late} id="cp-banner" v=${c.banner} ph="Roll initiative!" lbl="Nachricht an alle" on=${v=>up({banner:v})}/></span>${c.banner?html`<button class="btn quiet" onClick=${()=>up({banner:''})}>Leeren</button>`:null}</div>
+    <p class="sm soft" style="margin-top:.4rem">Steht bei allen ganz oben und auf der Gruppenseite groß unter dem Titel, bis du sie leerst. Mit Enter abschicken.</p></section>
+    <section class="panel"><h2 class="h3">Nächste Session</h2>
+    <div class="fg"><${F} l="Datum und Uhrzeit"><input class="in" id="cp-next" type="datetime-local" value=${toLocal(c.next)} onChange=${e=>{const t=e.target.value?new Date(e.target.value).getTime():0;up({next:isFinite(t)?t:0})}}/><//>
+      <${F} l="Notiz dazu"><${Late} id="cp-nextnote" v=${c.nextNote} ph="Wir treffen uns im Voice-Channel" on=${v=>up({nextNote:v})}/><//></div></section></div>`}
 /* characters prepared outside the app (a file with finished sheets and pictures) go to the players here */
 function GmImport(){
   const [list,setList]=useState(null),[to,setTo]=useState({}),[busy,setBusy]=useState(''),[done,setDone]=useState({});
@@ -2231,15 +2236,15 @@ function GmPlayers(){
   const withSheet=ids.filter(u=>S.sheets[u]);
   return html`<p class="lead">Alle, die das Kampagnenbuch geöffnet haben, mit den Werten, die du am häufigsten brauchst.</p><${GmImport}/>
     ${withSheet.length?html`<div class="rowf" style="margin-bottom:.8rem"><${PdfBtn} label=${withSheet.length>1?'Alle '+withSheet.length+' Bögen als PDF':'Bogen als PDF'} file="Tales of Nalvair - alle Charaktere" list=${()=>withSheet.filter(u=>S.sheets[u]).map(u=>({s:S.sheets[u],uid:u,player:pdfWho(u)}))}/><span class="sm soft">Ein Bogen pro Charakter, alle in einer Datei.</span></div>`:null}
-    ${!ids.length?html`<p class="empty">Noch war niemand da. Schick deinen Spielern die Adresse der App (unter Session).</p>`:html`<div class="scrollx"><table class="roster">
+    ${!ids.length?html`<p class="empty">Noch war niemand da. Schick deinen Spielern die Adresse der App (unter Session).</p>`:html`<div class="panel gm-sec"><div class="scrollx"><table class="roster">
       <thead><tr><th>Spieler</th><th>Charakter</th><th>AC</th><th>HP</th><th>Passive Perc.</th><th>Init</th><th></th></tr></thead>
       <tbody>${ids.map(u=>{const raw=S.sheets[u],s=raw?normSheet(clone(raw)):null,c=S.chars[u]||{};return html`<tr key=${u}><td><${Who} uid=${u}/></td>
-        <td>${s?html`<b>${s.name||'Namenlos'}</b><br/><span class="sm soft">${clsLine(s)}</span>`:html`<span class="soft">noch keiner</span>`}</td>
+        <td>${s?html`<span class="rowf" style="flex-wrap:nowrap"><span class=${'mini hc-'+heroCol(s,u)} aria-hidden="true">${mono(s.name)}</span><span><b>${s.name||'Namenlos'}</b><br/><span class="sm soft">${clsLine(s)}</span></span></span>`:html`<span class="soft">noch keiner</span>`}</td>
         <td>${s?s.ac:''}</td><td>${s?s.hp+' / '+s.hpMax+(num(s.tmp)?' +'+s.tmp:''):''}</td><td>${s?passive(s):''}</td><td>${s?sg(initB(s)):''}</td>
-        <td><span class="rowf">${s?html`<button class="btn s" onClick=${()=>{ui({gmSheet:u});window.scrollTo(0,0)}}>Bogen</button><${PdfBtn} cls="btn s" list=${()=>[{s:S.sheets[u],uid:u,player:pdfWho(u)}]}/>`:null}<${FileBtn} cls="btn s" label="Bild" icon="cam" onFile=${f=>gmSetPortrait(u,f)}/>${u!==S.uid&&(s||c.joined)?html`<${Confirm} label="Entfernen" ask=${s?'Charakter und Bogen löschen?':'Aus der Liste nehmen?'} yes="Entfernen" onYes=${()=>kick(u)}/>`:null}</span></td></tr>`})}</tbody></table></div>`}`}
+        <td><span class="rowf">${s?html`<button class="btn s" onClick=${()=>{ui({gmSheet:u});window.scrollTo(0,0)}}>Bogen</button><${PdfBtn} cls="btn s" list=${()=>[{s:S.sheets[u],uid:u,player:pdfWho(u)}]}/>`:null}<${FileBtn} cls="btn s" label="Bild" icon="cam" onFile=${f=>gmSetPortrait(u,f)}/>${u!==S.uid&&(s||c.joined)?html`<${Confirm} label="Entfernen" ask=${s?'Charakter und Bogen löschen?':'Aus der Liste nehmen?'} yes="Entfernen" onYes=${()=>kick(u)}/>`:null}</span></td></tr>`})}</tbody></table></div></div>`}`}
 function GmTab(){
   const v=S.ui.gm;
-  return html`<h1 class="h1">Spielleitung</h1>
+  return html`<${PageHead} title="Spielleitung" eyebrow="Nur für dich sichtbar"/>
     <div class="subtabs" role="tablist">${[['session','Session'],['combat','Kampf'],['items','Inhalte'],['players','Spieler']].map(t=>html`<button key=${t[0]} role="tab" aria-selected=${v===t[0]} aria-current=${v===t[0]?'true':null} onClick=${()=>ui({gm:t[0]})}>${t[1]}</button>`)}</div>
     ${v==='combat'?html`<${GmCombat}/>`:v==='items'?html`<${GmItems}/>`:v==='players'?html`<${GmPlayers}/>`:html`<${GmSession}/>`}`}
 
